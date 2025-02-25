@@ -1,0 +1,31 @@
+// src/components/Footer.tsx
+'use client';
+
+import Logo from '@/components/ui/Logo';
+
+export default function Footer() {
+  return (
+    <footer className='bg-gray-900 text-gray-200'>
+      <div className='container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-6 md:flex-row'>
+        <div className='flex items-center space-x-2'>
+          <Logo />
+          <span className='font-semibold'>FundBridge</span>
+        </div>
+        <p className='text-sm'>
+          &copy; {new Date().getFullYear()} FundBridge. Бүх эрх хамгаалагдсан.
+        </p>
+        <div className='flex space-x-4 text-sm'>
+          <a href='#' className='hover:underline'>
+            Нууцлалын бодлого
+          </a>
+          <a href='#' className='hover:underline'>
+            Үйлчилгээний нөхцөл
+          </a>
+          <a href='#' className='hover:underline'>
+            Холбоо барих
+          </a>
+        </div>
+      </div>
+    </footer>
+  );
+}
