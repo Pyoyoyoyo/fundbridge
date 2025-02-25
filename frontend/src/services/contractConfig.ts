@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-export const CONTRACT_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
+export const CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 export const CONTRACT_ABI = [
   {
     inputs: [],
@@ -116,6 +116,56 @@ export const CONTRACT_ABI = [
     name: 'donate',
     outputs: [],
     stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'getAllCampaigns',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'id',
+            type: 'uint256',
+          },
+          {
+            internalType: 'address',
+            name: 'owner',
+            type: 'address',
+          },
+          {
+            internalType: 'string',
+            name: 'title',
+            type: 'string',
+          },
+          {
+            internalType: 'string',
+            name: 'description',
+            type: 'string',
+          },
+          {
+            internalType: 'uint256',
+            name: 'goal',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'raised',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bool',
+            name: 'isActive',
+            type: 'bool',
+          },
+        ],
+        internalType: 'struct FundraisingContract.Campaign[]',
+        name: '',
+        type: 'tuple[]',
+      },
+    ],
+    stateMutability: 'view',
     type: 'function',
   },
   {

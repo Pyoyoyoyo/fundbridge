@@ -61,6 +61,16 @@ contract FundraisingContract {
         );
     }
 
+    // Шинээр нэмэх функц: getAllCampaigns()
+    // Энэ нь campaignCount-оор циклдэж, бүх Campaign struct-ыг нэг массивад хувилаад буцаана.
+    function getAllCampaigns() public view returns (Campaign[] memory) {
+        Campaign[] memory all = new Campaign[](campaignCount);
+        for (uint i = 1; i <= campaignCount; i++) {
+            all[i - 1] = campaigns[i];
+        }
+        return all;
+    }
+
     function closeCampaign(uint _campaignId) public {
         Campaign storage c = campaigns[_campaignId];
         require(msg.sender == c.owner, "Not owner");

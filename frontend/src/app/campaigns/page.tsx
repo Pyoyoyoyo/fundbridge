@@ -1,52 +1,41 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { ethers, JsonRpcProvider } from 'ethers';
+import { getFundraisingContract } from '../../services/contractConfig'; // Adjust path if needed
+import React from 'react';
 
-// A minimal mock campaign data structure
 interface Campaign {
-  id: string;
+  id: number;
+  owner: string;
   title: string;
   description: string;
   goal: number;
   raised: number;
-  image?: string; // optional campaign image
+  isActive: boolean;
 }
 
 export default function CampaignsPage() {
-  // For demonstration, we’ll store campaigns in state
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
 
-  // In a real app, fetch from your backend or blockchain
   useEffect(() => {
-    // Example: Hard-coded mock data
-    const mockCampaigns: Campaign[] = [
-      {
-        id: '1',
-        title: 'Clean Water Project',
-        description: 'Bringing clean water to rural areas.',
-        goal: 1000,
-        raised: 350,
-        image: '/campaign1.png',
-      },
-      {
-        id: '2',
-        title: 'Solar Village',
-        description: 'Providing solar energy solutions.',
-        goal: 2000,
-        raised: 1800,
-        image: '/campaign2.jpg',
-      },
-      {
-        id: '3',
-        title: 'Education for All',
-        description: 'Support underprivileged students.',
-        goal: 1500,
-        raised: 400,
-        image: '/campaign3.jpg',
-      },
-    ];
-    setCampaigns(mockCampaigns);
+    const provider = new JsonRpcProvider('http://127.0.0.1:8545');
+    const contract = getFundraisingContract(provider);
+
+    async function fetchData() {
+      const data = await contract.getAllCampaigns();
+      const parsed = data.map((c: any) => ({
+        id: Number(c[0]), // BigInt -> number
+        owner: c[1],
+        title: c[2],
+        description: c[3],
+        goal: Number(c[4]), // BigInt -> number
+        raised: Number(c[5]),
+        isActive: c[6],
+      }));
+      setCampaigns(parsed);
+    }
+    fetchData();
   }, []);
 
   return (
@@ -68,7 +57,7 @@ export default function CampaignsPage() {
   );
 }
 
-// A sub-component to display each campaign in a card
+// Sub-component for each campaign card
 function CampaignCard({ campaign }: { campaign: Campaign }) {
   const progress = Math.min(
     (campaign.raised / campaign.goal) * 100,
@@ -77,14 +66,8 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
 
   return (
     <div className='rounded-lg border bg-white p-4 shadow-sm hover:shadow-md transition-shadow'>
-      {/* Optional campaign image */}
-      {campaign.image && (
-        <img
-          src={campaign.image}
-          alt={campaign.title}
-          className='mb-3 h-40 w-full object-cover rounded'
-        />
-      )}
+      {/* If you store images on-chain or off-chain, adapt accordingly */}
+      {/* <img src="/campaign1.jpg" alt={campaign.title} className="mb-3 h-40 w-full object-cover rounded" /> */}
 
       <h2 className='mb-2 text-lg font-semibold text-gray-800'>
         {campaign.title}
@@ -92,7 +75,6 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
       <p className='text-sm text-gray-600'>{campaign.description}</p>
 
       <div className='my-3 h-2 w-full rounded bg-gray-200'>
-        {/* progress bar */}
         <div
           className='h-full rounded bg-blue-600'
           style={{ width: `${progress}%` }}
@@ -107,12 +89,12 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
         </span>
       </div>
 
-      <Link
+      <a
         href={`/campaigns/${campaign.id}`}
         className='block rounded bg-blue-600 px-4 py-2 text-center text-white hover:bg-blue-500'
       >
         Дэлгэрэнгүй
-      </Link>
+      </a>
     </div>
   );
 }

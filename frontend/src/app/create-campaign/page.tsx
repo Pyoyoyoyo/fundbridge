@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { ethers } from 'ethers';
-import { getFundraisingContract } from '@/app/services/contractConfig';
+import { getFundraisingContract } from '@/services/contractConfig';
 
 export default function CreateCampaignPage() {
   const [title, setTitle] = useState('');
