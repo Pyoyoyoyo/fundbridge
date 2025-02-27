@@ -1,100 +1,114 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Placeholder login handler
-  const handleLogin = (e: React.FormEvent) => {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    // Replace with real auth logic: e.g. call an API or use Firebase
-    alert(`Logging in with email: ${email}, password: ${password}`);
-  };
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (!email || !password) {
+        throw new Error('И-мэйл болон нууц үгээ бөглөнө үү!');
+      }
+      alert(`Амжилттай нэвтэрлээ: ${email}`);
+      router.push('/');
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <div className='flex min-h-screen items-center justify-center bg-gray-50'>
-      <div className='w-full max-w-md rounded bg-white p-8 shadow-md'>
-        <h1 className='mb-6 text-2xl font-semibold text-gray-800'>Нэвтрэх</h1>
-
-        <form onSubmit={handleLogin} className='space-y-4'>
-          <div>
-            <label
-              htmlFor='email'
-              className='block text-sm font-medium text-gray-700'
+    <div className='flex min-h-screen items-center justify-center bg-gray-100'>
+      <Card className='w-full max-w-md bg-white shadow-lg rounded-lg p-8'>
+        <CardHeader className='bg-blue-600 text-white p-5 rounded-t-lg shadow-md'>
+          <CardTitle className='text-center text-xl font-bold'>
+            Нэвтрэх
+          </CardTitle>
+        </CardHeader>
+        <CardContent className='p-6 space-y-4'>
+          {error && (
+            <Alert
+              variant='destructive'
+              className='bg-red-600 text-white p-3 rounded-md'
             >
-              И-мэйл
-            </label>
-            <input
+              <AlertTitle>Алдаа</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <form onSubmit={handleLogin} className='space-y-4'>
+            <Input
               id='email'
               type='email'
-              required
-              className='mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+              placeholder='И-мэйл'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder='name@example.com'
+              className='border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-md'
             />
-          </div>
-
-          <div>
-            <label
-              htmlFor='password'
-              className='block text-sm font-medium text-gray-700'
-            >
-              Нууц үг
-            </label>
-            <input
+            <Input
               id='password'
               type='password'
-              required
-              className='mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+              placeholder='Нууц үг'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder='••••••••'
+              className='border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-md'
             />
+            <Button
+              type='submit'
+              disabled={loading}
+              className='w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-md shadow-md transition-all'
+            >
+              {loading ? 'Нэвтэрч байна...' : 'Нэвтрэх'}
+            </Button>
+          </form>
+          <div className='text-center text-sm text-gray-700 mt-4'>
+            <a href='#' className='text-blue-600 hover:underline'>
+              Нууц үг сэргээх
+            </a>
           </div>
-
-          <button
-            type='submit'
-            className='w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-500'
-          >
-            Нэвтрэх
-          </button>
-        </form>
-
-        {/* Optional: Forgot password link */}
-        <div className='mt-4 text-sm text-center'>
-          <a href='#' className='text-blue-600 hover:underline'>
-            Нууц үг сэргээх
-          </a>
-        </div>
-        <div className='mt-4 text-sm text-center'>
-          <span className='text-gray-700'>Шинэ хэрэглэгч үү?</span>{' '}
-          <a href='/signup' className='text-blue-600 hover:underline'>
-            Бүртгүүлэх
-          </a>
-        </div>
-
-        {/* Optional: Divider for social or web3 login */}
-        <div className='my-4 flex items-center'>
-          <div className='flex-1 border-t border-gray-300' />
-          <p className='mx-2 text-sm text-gray-500'>эсвэл</p>
-          <div className='flex-1 border-t border-gray-300' />
-        </div>
-
-        {/* Example: Social or web3 login */}
-        <div className='flex flex-col space-y-2'>
-          <button className='flex items-center justify-center space-x-2 rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100'>
-            <img src='/google-logo.png' alt='Google' className='h-4 w-4' />
-            <span>Google-ээр нэвтрэх</span>
-          </button>
-          <button className='flex items-center justify-center space-x-2 rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100'>
-            <img src='/wallet-logo.png' alt='Wallet' className='h-4 w-4' />
-            <span>MetaMask Wallet-ээр нэвтрэх</span>
-          </button>
-        </div>
-      </div>
+          <div className='text-center text-sm text-gray-700 mt-2'>
+            <span>Шинэ хэрэглэгч үү?</span>{' '}
+            <a href='/signup' className='text-blue-600 hover:underline'>
+              Бүртгүүлэх
+            </a>
+          </div>
+          <div className='my-4 flex items-center'>
+            <div className='flex-1 border-t border-gray-300' />
+            <p className='mx-2 text-sm text-gray-500'>эсвэл</p>
+            <div className='flex-1 border-t border-gray-300' />
+          </div>
+          <div className='flex flex-col space-y-2'>
+            <Button
+              variant='outline'
+              className='flex items-center justify-center space-x-2 border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100'
+            >
+              <img src='/google-logo.png' alt='Google' className='h-4 w-4' />
+              <span>Google-ээр нэвтрэх</span>
+            </Button>
+            <Button
+              variant='outline'
+              className='flex items-center justify-center space-x-2 border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100'
+            >
+              <img src='/wallet-logo.png' alt='Wallet' className='h-4 w-4' />
+              <span>MetaMask Wallet-ээр нэвтрэх</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

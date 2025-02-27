@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-export const CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+export const CONTRACT_ADDRESS = '0x0CEF72adac9b1C279F5ec4b212D129D98e6CCE99';
 export const CONTRACT_ABI = [
   {
     inputs: [],
@@ -65,21 +65,13 @@ export const CONTRACT_ABI = [
         name: 'isActive',
         type: 'bool',
       },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
       {
-        internalType: 'uint256',
-        name: '_campaignId',
-        type: 'uint256',
+        internalType: 'string',
+        name: 'imageUrl',
+        type: 'string',
       },
     ],
-    name: 'closeCampaign',
-    outputs: [],
-    stateMutability: 'nonpayable',
+    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -99,23 +91,15 @@ export const CONTRACT_ABI = [
         name: '_goal',
         type: 'uint256',
       },
+      {
+        internalType: 'string',
+        name: '_imageUrl',
+        type: 'string',
+      },
     ],
     name: 'createCampaign',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: '_campaignId',
-        type: 'uint256',
-      },
-    ],
-    name: 'donate',
-    outputs: [],
-    stateMutability: 'payable',
     type: 'function',
   },
   {
@@ -158,6 +142,11 @@ export const CONTRACT_ABI = [
             internalType: 'bool',
             name: 'isActive',
             type: 'bool',
+          },
+          {
+            internalType: 'string',
+            name: 'imageUrl',
+            type: 'string',
           },
         ],
         internalType: 'struct FundraisingContract.Campaign[]',
@@ -212,6 +201,11 @@ export const CONTRACT_ABI = [
         internalType: 'bool',
         name: '',
         type: 'bool',
+      },
+      {
+        internalType: 'string',
+        name: '',
+        type: 'string',
       },
     ],
     stateMutability: 'view',

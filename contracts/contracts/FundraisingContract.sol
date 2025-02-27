@@ -10,6 +10,7 @@ contract FundraisingContract {
         uint goal;
         uint raised;
         bool isActive;
+        string imageUrl; // 🆕 Зургийн линкийг хадгалах талбар нэмлээ
     }
 
     uint public campaignCount;
@@ -22,7 +23,8 @@ contract FundraisingContract {
     function createCampaign(
         string memory _title,
         string memory _description,
-        uint _goal
+        uint _goal,
+        string memory _imageUrl // 🆕 Шинэ талбар
     ) public {
         campaignCount++;
         campaigns[campaignCount] = Campaign({
@@ -32,14 +34,9 @@ contract FundraisingContract {
             description: _description,
             goal: _goal,
             raised: 0,
-            isActive: true
+            isActive: true,
+            imageUrl: _imageUrl
         });
-    }
-
-    function donate(uint _campaignId) public payable {
-        Campaign storage c = campaigns[_campaignId];
-        require(c.isActive, "Campaign is not active.");
-        c.raised += msg.value;
     }
 
     function getCampaign(
@@ -47,7 +44,16 @@ contract FundraisingContract {
     )
         public
         view
-        returns (uint, address, string memory, string memory, uint, uint, bool)
+        returns (
+            uint,
+            address,
+            string memory,
+            string memory,
+            uint,
+            uint,
+            bool,
+            string memory // 🆕 imageUrl буцаана
+        )
     {
         Campaign memory c = campaigns[_campaignId];
         return (
@@ -57,23 +63,16 @@ contract FundraisingContract {
             c.description,
             c.goal,
             c.raised,
-            c.isActive
+            c.isActive,
+            c.imageUrl
         );
     }
 
-    // Шинээр нэмэх функц: getAllCampaigns()
-    // Энэ нь campaignCount-оор циклдэж, бүх Campaign struct-ыг нэг массивад хувилаад буцаана.
     function getAllCampaigns() public view returns (Campaign[] memory) {
         Campaign[] memory all = new Campaign[](campaignCount);
         for (uint i = 1; i <= campaignCount; i++) {
             all[i - 1] = campaigns[i];
         }
         return all;
-    }
-
-    function closeCampaign(uint _campaignId) public {
-        Campaign storage c = campaigns[_campaignId];
-        require(msg.sender == c.owner, "Not owner");
-        c.isActive = false;
     }
 }
