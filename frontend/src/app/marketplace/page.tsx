@@ -2,52 +2,66 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { BrowserProvider } from 'ethers';
+import { getMarketplaceContract } from '@/services/marketplaceConfig';
 
 interface MarketplaceItem {
   id: string;
   title: string;
   description: string;
-  price: number;
+  price: number; // MNT
   image?: string;
-  // any other fields, e.g. "seller", "category", "donateToCampaign" etc.
+  campaignId?: number; // Аль кампанит ажилд хандив оруулахыг заана
 }
 
 export default function MarketplacePage() {
   const [items, setItems] = useState<MarketplaceItem[]>([]);
 
-  // In a real app, fetch from your blockchain or an API
   useEffect(() => {
-    const mockItems: MarketplaceItem[] = [
-      {
-        id: 'item1',
-        title: 'Ном: Блокчейн технологи',
-        description: 'Шинэ үеийн санхүү, технологийн үндсэн ойлголтууд.',
-        price: 15000,
-        image: '/marketplace-item1.png',
-      },
-      {
-        id: 'item2',
-        title: 'Ил захидал: Урам зориг',
-        description: 'Урам зориг хайрласан, ил захидал хэвлэл.',
-        price: 5000,
-        image: '/marketplace-item2.png',
-      },
-      {
-        id: 'item3',
-        title: 'Ухаалаг бугуйн цаг',
-        description: 'Хэрэглээний шилдэг технологи.',
-        price: 120000,
-        image: '/marketplace-item3.jpg',
-      },
-    ];
-    setItems(mockItems);
+    async function fetchItems() {
+      try {
+        if (!(window as any).ethereum) {
+          console.warn('MetaMask not found!');
+          return;
+        }
+        const provider = new BrowserProvider((window as any).ethereum);
+        await provider.send('eth_requestAccounts', []);
+        const signer = await provider.getSigner();
+
+        const contract = getMarketplaceContract(signer);
+        const rawItems = await contract.getAllItems();
+        console.log('rawItems:', rawItems);
+        const parsed = rawItems.map((item: any) => ({
+          id: item.id.toString(),
+          title: item.title,
+          description: item.description,
+          price: Number(item.price),
+          image: item.imageUrl,
+          campaignId: Number(item.campaignId),
+        })) as MarketplaceItem[];
+
+        setItems(parsed);
+      } catch (err) {
+        console.error('Failed to fetch marketplace items:', err);
+      }
+    }
+
+    fetchItems();
   }, []);
 
   return (
     <div className='container mx-auto px-4 py-8'>
-      <h1 className='mb-4 text-2xl font-semibold text-gray-800 sm:text-3xl'>
-        Marketplace
-      </h1>
+      <div className='mb-4 flex items-center justify-between'>
+        <h1 className='text-2xl font-semibold text-gray-800 sm:text-3xl'>
+          Marketplace
+        </h1>
+        <Link
+          href='/marketplace/create'
+          className='rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-500'
+        >
+          Item зарах
+        </Link>
+      </div>
       <p className='mb-8 text-gray-600'>
         Үнэт зүйлсээ зарж, олсон орлогоо шууд төслүүдэд хандивлах, эсвэл
         худалдаж авах боломжтой зах зээл.
@@ -64,8 +78,13 @@ export default function MarketplacePage() {
 
 function MarketplaceCard({ item }: { item: MarketplaceItem }) {
   return (
-    <div className='rounded-lg border bg-white p-4 shadow-sm hover:shadow-md transition-shadow'>
-      {/* Optional image */}
+    <div
+      className='
+        rounded-lg border bg-white p-4 shadow-sm 
+        hover:shadow-md transition-shadow 
+        animate-in fade-in
+      '
+    >
       {item.image && (
         <img
           src={item.image}
@@ -78,7 +97,7 @@ function MarketplaceCard({ item }: { item: MarketplaceItem }) {
       <p className='text-sm text-gray-600'>{item.description}</p>
 
       <div className='my-3 text-sm text-gray-600'>
-        Үнэ: <strong>{item.price} MNT</strong>
+        Үнэ: <strong>{item.price.toLocaleString()} MNT</strong>
       </div>
 
       <Link
@@ -87,9 +106,6 @@ function MarketplaceCard({ item }: { item: MarketplaceItem }) {
       >
         Дэлгэрэнгүй
       </Link>
-      {/* Or link to a detail page:
-          <Link href={`/marketplace/${item.id}`} ... />
-      */}
     </div>
   );
 }

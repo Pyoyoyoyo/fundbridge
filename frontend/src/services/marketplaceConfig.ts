@@ -1,9 +1,15 @@
 import { ethers } from 'ethers';
 
-export const CONTRACT_ADDRESS = '0x82ec9513218A1fBB430d616AF91E5F8D7Fc0493b';
+export const CONTRACT_ADDRESS = '0x4E773aE695A968633ac5Ef8E17c87cB0c517b7fD';
 export const CONTRACT_ABI = [
   {
-    inputs: [],
+    inputs: [
+      {
+        internalType: 'address',
+        name: '_fundraisingContract',
+        type: 'address',
+      },
+    ],
     stateMutability: 'nonpayable',
     type: 'constructor',
   },
@@ -13,11 +19,29 @@ export const CONTRACT_ABI = [
       {
         indexed: true,
         internalType: 'uint256',
+        name: 'itemId',
+        type: 'uint256',
+      },
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'buyer',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'price',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
         name: 'campaignId',
         type: 'uint256',
       },
     ],
-    name: 'CampaignClosed',
+    name: 'ItemBought',
     type: 'event',
   },
   {
@@ -26,29 +50,29 @@ export const CONTRACT_ABI = [
       {
         indexed: true,
         internalType: 'uint256',
-        name: 'campaignId',
+        name: 'itemId',
         type: 'uint256',
       },
       {
         indexed: true,
         internalType: 'address',
-        name: 'owner',
+        name: 'seller',
         type: 'address',
       },
       {
         indexed: false,
         internalType: 'uint256',
-        name: 'goal',
+        name: 'price',
         type: 'uint256',
       },
       {
         indexed: false,
         internalType: 'uint256',
-        name: 'deadline',
+        name: 'campaignId',
         type: 'uint256',
       },
     ],
-    name: 'CampaignCreated',
+    name: 'ItemCreated',
     type: 'event',
   },
   {
@@ -57,11 +81,11 @@ export const CONTRACT_ABI = [
       {
         indexed: true,
         internalType: 'uint256',
-        name: 'campaignId',
+        name: 'itemId',
         type: 'uint256',
       },
     ],
-    name: 'CampaignUpdated',
+    name: 'ItemDeactivated',
     type: 'event',
   },
   {
@@ -70,138 +94,24 @@ export const CONTRACT_ABI = [
       {
         indexed: true,
         internalType: 'uint256',
-        name: 'campaignId',
-        type: 'uint256',
-      },
-      {
-        indexed: true,
-        internalType: 'address',
-        name: 'donor',
-        type: 'address',
-      },
-      {
-        indexed: false,
-        internalType: 'uint256',
-        name: 'amount',
+        name: 'itemId',
         type: 'uint256',
       },
     ],
-    name: 'DonationReceived',
+    name: 'ItemUpdated',
     type: 'event',
   },
   {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: 'uint256',
-        name: 'campaignId',
-        type: 'uint256',
-      },
-      {
-        indexed: true,
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-      {
-        indexed: false,
-        internalType: 'uint256',
-        name: 'amount',
-        type: 'uint256',
-      },
-    ],
-    name: 'Withdrawn',
-    type: 'event',
-  },
-  {
-    inputs: [],
-    name: 'campaignCount',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
     inputs: [
       {
         internalType: 'uint256',
-        name: '',
+        name: '_itemId',
         type: 'uint256',
       },
     ],
-    name: 'campaigns',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: 'id',
-        type: 'uint256',
-      },
-      {
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-      {
-        internalType: 'string',
-        name: 'title',
-        type: 'string',
-      },
-      {
-        internalType: 'string',
-        name: 'description',
-        type: 'string',
-      },
-      {
-        internalType: 'uint256',
-        name: 'goal',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'raised',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bool',
-        name: 'isActive',
-        type: 'bool',
-      },
-      {
-        internalType: 'string',
-        name: 'imageUrl',
-        type: 'string',
-      },
-      {
-        internalType: 'string',
-        name: 'metadataHash',
-        type: 'string',
-      },
-      {
-        internalType: 'uint256',
-        name: 'deadline',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: '_campaignId',
-        type: 'uint256',
-      },
-    ],
-    name: 'closeCampaign',
+    name: 'buyItem',
     outputs: [],
-    stateMutability: 'nonpayable',
+    stateMutability: 'payable',
     type: 'function',
   },
   {
@@ -218,7 +128,7 @@ export const CONTRACT_ABI = [
       },
       {
         internalType: 'uint256',
-        name: '_goal',
+        name: '_price',
         type: 'uint256',
       },
       {
@@ -227,17 +137,12 @@ export const CONTRACT_ABI = [
         type: 'string',
       },
       {
-        internalType: 'string',
-        name: '_metadataHash',
-        type: 'string',
-      },
-      {
         internalType: 'uint256',
-        name: '_deadline',
+        name: '_campaignId',
         type: 'uint256',
       },
     ],
-    name: 'createCampaign',
+    name: 'createItem',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -246,34 +151,23 @@ export const CONTRACT_ABI = [
     inputs: [
       {
         internalType: 'uint256',
-        name: '_campaignId',
+        name: '_itemId',
         type: 'uint256',
       },
     ],
-    name: 'donate',
+    name: 'deactivateItem',
     outputs: [],
-    stateMutability: 'payable',
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
+    inputs: [],
+    name: 'fundraisingContract',
+    outputs: [
       {
         internalType: 'address',
         name: '',
         type: 'address',
-      },
-    ],
-    name: 'donations',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
       },
     ],
     stateMutability: 'view',
@@ -281,7 +175,7 @@ export const CONTRACT_ABI = [
   },
   {
     inputs: [],
-    name: 'getAllCampaigns',
+    name: 'getAllItems',
     outputs: [
       {
         components: [
@@ -292,7 +186,7 @@ export const CONTRACT_ABI = [
           },
           {
             internalType: 'address',
-            name: 'owner',
+            name: 'seller',
             type: 'address',
           },
           {
@@ -307,18 +201,8 @@ export const CONTRACT_ABI = [
           },
           {
             internalType: 'uint256',
-            name: 'goal',
+            name: 'price',
             type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'raised',
-            type: 'uint256',
-          },
-          {
-            internalType: 'bool',
-            name: 'isActive',
-            type: 'bool',
           },
           {
             internalType: 'string',
@@ -326,17 +210,22 @@ export const CONTRACT_ABI = [
             type: 'string',
           },
           {
-            internalType: 'string',
-            name: 'metadataHash',
-            type: 'string',
-          },
-          {
             internalType: 'uint256',
-            name: 'deadline',
+            name: 'campaignId',
             type: 'uint256',
           },
+          {
+            internalType: 'bool',
+            name: 'isSold',
+            type: 'bool',
+          },
+          {
+            internalType: 'bool',
+            name: 'isActive',
+            type: 'bool',
+          },
         ],
-        internalType: 'struct FundraisingContract.Campaign[]',
+        internalType: 'struct MarketplaceContract.MarketplaceItem[]',
         name: '',
         type: 'tuple[]',
       },
@@ -348,57 +237,72 @@ export const CONTRACT_ABI = [
     inputs: [
       {
         internalType: 'uint256',
-        name: '_campaignId',
+        name: '_itemId',
         type: 'uint256',
       },
     ],
-    name: 'getCampaign',
+    name: 'getItem',
     outputs: [
       {
-        internalType: 'uint256',
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'id',
+            type: 'uint256',
+          },
+          {
+            internalType: 'address',
+            name: 'seller',
+            type: 'address',
+          },
+          {
+            internalType: 'string',
+            name: 'title',
+            type: 'string',
+          },
+          {
+            internalType: 'string',
+            name: 'description',
+            type: 'string',
+          },
+          {
+            internalType: 'uint256',
+            name: 'price',
+            type: 'uint256',
+          },
+          {
+            internalType: 'string',
+            name: 'imageUrl',
+            type: 'string',
+          },
+          {
+            internalType: 'uint256',
+            name: 'campaignId',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bool',
+            name: 'isSold',
+            type: 'bool',
+          },
+          {
+            internalType: 'bool',
+            name: 'isActive',
+            type: 'bool',
+          },
+        ],
+        internalType: 'struct MarketplaceContract.MarketplaceItem',
         name: '',
-        type: 'uint256',
+        type: 'tuple',
       },
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-      {
-        internalType: 'string',
-        name: '',
-        type: 'string',
-      },
-      {
-        internalType: 'string',
-        name: '',
-        type: 'string',
-      },
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bool',
-        name: '',
-        type: 'bool',
-      },
-      {
-        internalType: 'string',
-        name: '',
-        type: 'string',
-      },
-      {
-        internalType: 'string',
-        name: '',
-        type: 'string',
-      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'itemCount',
+    outputs: [
       {
         internalType: 'uint256',
         name: '',
@@ -412,7 +316,66 @@ export const CONTRACT_ABI = [
     inputs: [
       {
         internalType: 'uint256',
-        name: '_campaignId',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    name: 'items',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: 'id',
+        type: 'uint256',
+      },
+      {
+        internalType: 'address',
+        name: 'seller',
+        type: 'address',
+      },
+      {
+        internalType: 'string',
+        name: 'title',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: 'description',
+        type: 'string',
+      },
+      {
+        internalType: 'uint256',
+        name: 'price',
+        type: 'uint256',
+      },
+      {
+        internalType: 'string',
+        name: 'imageUrl',
+        type: 'string',
+      },
+      {
+        internalType: 'uint256',
+        name: 'campaignId',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bool',
+        name: 'isSold',
+        type: 'bool',
+      },
+      {
+        internalType: 'bool',
+        name: 'isActive',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '_itemId',
         type: 'uint256',
       },
       {
@@ -422,45 +385,27 @@ export const CONTRACT_ABI = [
       },
       {
         internalType: 'string',
-        name: '_newDescription',
+        name: '_newDesc',
         type: 'string',
+      },
+      {
+        internalType: 'uint256',
+        name: '_newPrice',
+        type: 'uint256',
       },
       {
         internalType: 'string',
         name: '_newImageUrl',
         type: 'string',
       },
-      {
-        internalType: 'string',
-        name: '_newMetadataHash',
-        type: 'string',
-      },
     ],
-    name: 'updateCampaign',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: '_campaignId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: '_amount',
-        type: 'uint256',
-      },
-    ],
-    name: 'withdraw',
+    name: 'updateItem',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
   },
 ];
 
-export function getFundraisingContract(signerOrProvider: any) {
+export function getMarketplaceContract(signerOrProvider: any) {
   return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerOrProvider);
 }

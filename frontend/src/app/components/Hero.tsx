@@ -1,6 +1,8 @@
 // src/components/Hero.tsx
 'use client';
 
+import { Link } from 'lucide-react';
+
 export default function Hero() {
   return (
     <section className='relative overflow-hidden bg-gray-50'>

@@ -6,30 +6,39 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    try {
-      if (!email || !password) {
-        throw new Error('И-мэйл болон нууц үгээ бөглөнө үү!');
-      }
-      alert(`Амжилттай нэвтэрлээ: ${email}`);
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false, // бид гараар redirect хийх тул false
+    });
+
+    setLoading(false);
+
+    if (result?.error) {
+      setError(result.error);
+    } else {
+      // Амжилттай нэвтэрсэн
       router.push('/');
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
     }
+  }
+
+  async function handleGoogleLogin() {
+    // Google provider рүү чиглүүлэх
+    await signIn('google', { callbackUrl: '/' });
   }
 
   return (
@@ -95,6 +104,7 @@ export default function LoginPage() {
             <Button
               variant='outline'
               className='flex items-center justify-center space-x-2 border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100'
+              onClick={handleGoogleLogin}
             >
               <img src='/google-logo.png' alt='Google' className='h-4 w-4' />
               <span>Google-ээр нэвтрэх</span>

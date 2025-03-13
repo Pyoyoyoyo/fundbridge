@@ -9,57 +9,97 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useSession } from 'next-auth/react';
+import DonateButton from '@/components/ui/DonateButton';
+
+// 1 ETH ~ 6,000,000 MNT (жишээ ханш)
+const ETH_TO_MNT_RATE = 6000000;
 
 interface Campaign {
   id: number;
   owner: string;
   title: string;
   description: string;
-  goal: number;
-  raised: number;
+  goalWei: bigint;
+  raisedWei: bigint;
+  goalMnt: number;
+  raisedMnt: number;
   isActive: boolean;
   imageUrl?: string;
+  metadataHash?: string;
+  metadata?: any;
 }
 
 export default function CampaignsPage() {
+  const { data: session } = useSession();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Хэрэглэгчийн MetaMask address авч хадгална
+  useEffect(() => {
+    async function detectUser() {
+      if ((window as any)?.ethereum) {
+        const provider = new ethers.BrowserProvider((window as any).ethereum);
+        const accounts = await provider.send('eth_requestAccounts', []);
+        setCurrentUser(accounts[0]);
+      }
+    }
+    detectUser();
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        let provider;
-        if (typeof window !== 'undefined' && (window as any).ethereum) {
+        setLoading(true);
+
+        let provider: ethers.BrowserProvider | ethers.JsonRpcProvider;
+        if ((window as any)?.ethereum) {
           provider = new ethers.BrowserProvider((window as any).ethereum);
           await provider.send('eth_requestAccounts', []);
         } else {
           provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
         }
 
-        if (!provider) {
-          throw new Error(
-            'Ethereum холболт байхгүй байна. MetaMask суулгасан эсэхээ шалгана уу.'
-          );
-        }
-
         const contract = getFundraisingContract(provider);
         const data = await contract.getAllCampaigns();
+        // data[i] = [id, owner, title, description, goalWei, raisedWei, isActive, imageUrl, metadataHash]
 
-        const parsed = data.map((c: any) => ({
-          id: Number(c[0]),
-          owner: c[1],
-          title: c[2],
-          description: c[3],
-          goal: Number(c[4]),
-          raised: Number(c[5]),
-          isActive: c[6],
-          imageUrl: c.length > 7 ? c[7] : '/placeholder.png',
-        }));
-        setCampaigns(parsed);
+        const campaignsParsed: Campaign[] = [];
+
+        for (const c of data) {
+          const rawGoalWei = c[4];
+          const rawRaisedWei = c[5];
+
+          const goalEth = parseFloat(ethers.formatEther(rawGoalWei));
+          const raisedEth = parseFloat(ethers.formatEther(rawRaisedWei));
+          const goalMnt = Math.floor(goalEth * ETH_TO_MNT_RATE);
+          const raisedMnt = Math.floor(raisedEth * ETH_TO_MNT_RATE);
+
+          const campaignObj: Campaign = {
+            id: Number(c[0]),
+            owner: c[1],
+            title: c[2],
+            description: c[3],
+            goalWei: rawGoalWei,
+            raisedWei: rawRaisedWei,
+            goalMnt,
+            raisedMnt,
+            isActive: c[6],
+            imageUrl: c[7] || '/placeholder.png',
+            metadataHash: c[8] || '',
+            metadata: null,
+          };
+
+          campaignsParsed.push(campaignObj);
+        }
+
+        setCampaigns(campaignsParsed);
       } catch (err) {
+        console.error(err);
         setError(
-          'Кампанит ажлуудыг татаж чадсангүй. Сүлжээний тохиргоогоо шалгана уу.'
+          'Кампанит ажлуудыг татаж чадсангүй: ' + (err as Error).message
         );
       } finally {
         setLoading(false);
@@ -75,11 +115,13 @@ export default function CampaignsPage() {
         <h1 className='text-3xl font-bold text-blue-600'>
           Бүх кампанит ажлууд
         </h1>
-        <Link href='/campaigns/create'>
-          <Button className='bg-blue-600 hover:bg-blue-500 text-white'>
-            Кампанит ажил үүсгэх
-          </Button>
-        </Link>
+        {session?.user && (
+          <Link href='/campaigns/create'>
+            <Button className='bg-blue-600 hover:bg-blue-500 text-white'>
+              Кампанит ажил үүсгэх
+            </Button>
+          </Link>
+        )}
       </div>
 
       {error && (
@@ -101,7 +143,11 @@ export default function CampaignsPage() {
       ) : (
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           {campaigns.map((campaign) => (
-            <CampaignCard key={campaign.id} campaign={campaign} />
+            <CampaignCard
+              key={campaign.id}
+              campaign={campaign}
+              currentUser={currentUser}
+            />
           ))}
         </div>
       )}
@@ -109,11 +155,20 @@ export default function CampaignsPage() {
   );
 }
 
-function CampaignCard({ campaign }: { campaign: Campaign }) {
-  const progress = Math.min(
-    (campaign.raised / campaign.goal) * 100,
-    100
-  ).toFixed(0);
+function CampaignCard({
+  campaign,
+  currentUser,
+}: {
+  campaign: Campaign;
+  currentUser: string | null;
+}) {
+  const progress =
+    campaign.goalMnt > 0
+      ? Math.min((campaign.raisedMnt / campaign.goalMnt) * 100, 100).toFixed(0)
+      : '0';
+
+  const isOwner =
+    currentUser && currentUser.toLowerCase() === campaign.owner.toLowerCase();
 
   return (
     <Card className='bg-gray-100 shadow-lg hover:shadow-xl transition-shadow'>
@@ -124,30 +179,50 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
           className='h-40 w-full object-cover rounded-t-lg'
         />
       )}
-      <CardHeader className='bg-blue-600 text-white p-4'>
+      <CardHeader className='bg-blue-100 text-blue-600 p-4'>
         <CardTitle>{campaign.title}</CardTitle>
       </CardHeader>
       <CardContent className='p-4'>
-        <p className='text-gray-900'>{campaign.description}</p>
+        <p className='text-gray-900 mb-2'>{campaign.description}</p>
+
         <Progress value={parseFloat(progress)} className='my-3 bg-gray-300' />
         <div className='mb-3 flex justify-between text-sm text-gray-900'>
           <span>
             Зорилго:{' '}
-            <strong className='text-gray-900'>{campaign.goal} MNT</strong>
+            <strong className='text-gray-900'>
+              {campaign.goalMnt.toLocaleString()} MNT
+            </strong>
           </span>
           <span>
             Цугласан:{' '}
-            <strong className='text-blue-600'>{campaign.raised} MNT</strong>
+            <strong className='text-blue-600'>
+              {campaign.raisedMnt.toLocaleString()} MNT
+            </strong>
           </span>
         </div>
-        <Link href={`/campaigns/${campaign.id}`}>
-          <Button
-            variant='outline'
-            className='text-blue-600 border-blue-600 hover:bg-blue-100'
-          >
-            Дэлгэрэнгүй
-          </Button>
-        </Link>
+
+        <div className='flex items-center gap-2'>
+          <Link href={`/campaigns/${campaign.id}`}>
+            <Button
+              variant='outline'
+              className='text-blue-600 border-blue-600 hover:bg-blue-100'
+            >
+              Дэлгэрэнгүй
+            </Button>
+          </Link>
+          {/* Хандивын товч */}
+          <DonateButton
+            campaignId={campaign.id}
+            className='bg-blue-600 hover:bg-blue-500 text-white'
+          />
+        </div>
+
+        {/* Эзэмшигчийн хувьд илүү мэдээлэл харуулах (жишээ) */}
+        {isOwner && (
+          <p className='mt-3 text-sm text-green-600 font-medium'>
+            Та энэ кампанит ажлын эзэмшигч байна.
+          </p>
+        )}
       </CardContent>
     </Card>
   );
