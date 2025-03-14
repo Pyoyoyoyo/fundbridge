@@ -12,7 +12,7 @@ contract FundraisingContract {
         bool isActive;
         string imageUrl;
         string metadataHash; // e.g. IPFS CID
-        uint deadline; // Хугацаа (timestamp), жишээ нь block.timestamp + 30 days
+        uint deadline; // Хугацаа (timestamp)
     }
 
     uint public campaignCount;
@@ -45,17 +45,21 @@ contract FundraisingContract {
         campaignCount = 0;
     }
 
-    // createCampaign: Анхны байгуулах үед гол талбарууд + metadataHash
+    // createCampaign
     function createCampaign(
         string memory _title,
         string memory _description,
         uint _goal, // Wei
         string memory _imageUrl,
-        string memory _metadataHash,
-        uint _deadline // Жишээ нь block.timestamp + 30 days
+        string memory _metadataHash, // IPFS CID л дамжуулна
+        uint _deadline // block.timestamp + 30 days гэх мэт
     ) public {
+        // 1) Тодорхой require шалгуур
+        require(bytes(_title).length > 0, "Title cannot be empty");
+        require(bytes(_title).length <= 200, "Title too long (max 200 chars)");
         require(_goal > 0, "Goal must be > 0");
         require(_deadline > block.timestamp, "Deadline must be in the future");
+        require(bytes(_metadataHash).length > 0, "metadataHash required");
 
         campaignCount++;
         campaigns[campaignCount] = Campaign({
@@ -74,7 +78,7 @@ contract FundraisingContract {
         emit CampaignCreated(campaignCount, msg.sender, _goal, _deadline);
     }
 
-    // updateCampaign: зөвхөн эзэмшигч нь гарчиг, тайлбар, зургаа, metadata-г шинэчлэх боломжтой
+    // updateCampaign
     function updateCampaign(
         uint _campaignId,
         string memory _newTitle,
@@ -94,12 +98,11 @@ contract FundraisingContract {
         emit CampaignUpdated(_campaignId);
     }
 
-    // closeCampaign: эзэмшигч нь эсвэл хугацаа дууссан бол хаах
+    // closeCampaign
     function closeCampaign(uint _campaignId) public {
         require(_campaignId > 0 && _campaignId <= campaignCount, "Invalid ID");
         Campaign storage c = campaigns[_campaignId];
         require(c.isActive, "Already inactive");
-        // Эзэмшигч хааж болно, эсвэл deadline дууссан бол ч хааж болно
         require(
             msg.sender == c.owner || block.timestamp > c.deadline,
             "Not allowed"
@@ -109,7 +112,7 @@ contract FundraisingContract {
         emit CampaignClosed(_campaignId);
     }
 
-    // donate: Тухайн campaignId-д ETH илгээж, raised-ийг нэмэгдүүлнэ
+    // donate
     function donate(uint _campaignId) public payable {
         require(_campaignId > 0 && _campaignId <= campaignCount, "Invalid ID");
         Campaign storage c = campaigns[_campaignId];
@@ -123,8 +126,7 @@ contract FundraisingContract {
         emit DonationReceived(_campaignId, msg.sender, msg.value);
     }
 
-    // withdraw: Зөвхөн owner нь зорилгодоо хүрсэн эсэхээс үл хамааран
-    // raised-ээс хүссэн хэмжээгээ татан авах эсвэл бүрэн татах логик.
+    // withdraw
     function withdraw(uint _campaignId, uint _amount) public {
         require(_campaignId > 0 && _campaignId <= campaignCount, "Invalid ID");
         Campaign storage c = campaigns[_campaignId];
@@ -137,7 +139,7 @@ contract FundraisingContract {
         emit Withdrawn(_campaignId, msg.sender, _amount);
     }
 
-    // getCampaign: тусдаа struct буцаадаг
+    // getCampaign
     function getCampaign(
         uint _campaignId
     )
@@ -172,6 +174,7 @@ contract FundraisingContract {
         );
     }
 
+    // getAllCampaigns
     function getAllCampaigns() public view returns (Campaign[] memory) {
         Campaign[] memory all = new Campaign[](campaignCount);
         for (uint i = 1; i <= campaignCount; i++) {

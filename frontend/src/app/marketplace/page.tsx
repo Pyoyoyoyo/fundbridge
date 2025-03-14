@@ -4,14 +4,20 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BrowserProvider } from 'ethers';
 import { getMarketplaceContract } from '@/services/marketplaceConfig';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface MarketplaceItem {
   id: string;
+  seller: string;
   title: string;
   description: string;
-  price: number; // MNT
-  image?: string;
-  campaignId?: number; // Аль кампанит ажилд хандив оруулахыг заана
+  price: number; // Энд та mock байдлаар Number гэж үзэж байна (wei эсвэл MNT)
+  imageUrl: string;
+  campaignId: number;
+  isSold: boolean;
+  isActive: boolean;
+  metadataHash: string;
 }
 
 export default function MarketplacePage() {
@@ -30,15 +36,24 @@ export default function MarketplacePage() {
 
         const contract = getMarketplaceContract(signer);
         const rawItems = await contract.getAllItems();
-        console.log('rawItems:', rawItems);
-        const parsed = rawItems.map((item: any) => ({
-          id: item.id.toString(),
-          title: item.title,
-          description: item.description,
-          price: Number(item.price),
-          image: item.imageUrl,
-          campaignId: Number(item.campaignId),
-        })) as MarketplaceItem[];
+
+        // rawItems[i] = [
+        //   id, seller, title, description, price, imageUrl,
+        //   campaignId, isSold, isActive, metadataHash
+        // ]
+
+        const parsed: MarketplaceItem[] = rawItems.map((itm: any) => ({
+          id: itm.id.toString(),
+          seller: itm.seller,
+          title: itm.title,
+          description: itm.description,
+          price: Number(itm.price), // wei гэж үзвэл parseInt, эсвэл BigInt-д parseEther хэрэглэж болно
+          imageUrl: itm.imageUrl,
+          campaignId: Number(itm.campaignId),
+          isSold: itm.isSold,
+          isActive: itm.isActive,
+          metadataHash: itm.metadataHash,
+        }));
 
         setItems(parsed);
       } catch (err) {
@@ -62,6 +77,7 @@ export default function MarketplacePage() {
           Item зарах
         </Link>
       </div>
+
       <p className='mb-8 text-gray-600'>
         Үнэт зүйлсээ зарж, олсон орлогоо шууд төслүүдэд хандивлах, эсвэл
         худалдаж авах боломжтой зах зээл.
@@ -78,34 +94,40 @@ export default function MarketplacePage() {
 
 function MarketplaceCard({ item }: { item: MarketplaceItem }) {
   return (
-    <div
-      className='
-        rounded-lg border bg-white p-4 shadow-sm 
-        hover:shadow-md transition-shadow 
-        animate-in fade-in
-      '
-    >
-      {item.image && (
+    <Card className='bg-gray-100 shadow-lg hover:shadow-xl transition-shadow'>
+      {/* Хэрэв зураг байвал дээр нь харуулна */}
+      {item.imageUrl && (
         <img
-          src={item.image}
+          src={item.imageUrl}
           alt={item.title}
-          className='mb-3 h-40 w-full rounded object-cover'
+          className='h-40 w-full object-cover rounded-t-lg'
         />
       )}
+      <CardHeader className='bg-blue-100 text-blue-600 p-4'>
+        <CardTitle>{item.title}</CardTitle>
+      </CardHeader>
+      <CardContent className='p-4'>
+        <p className='text-gray-900 mb-2'>{item.description}</p>
 
-      <h2 className='mb-2 text-lg font-semibold text-gray-800'>{item.title}</h2>
-      <p className='text-sm text-gray-600'>{item.description}</p>
+        <div className='mb-3 text-sm text-gray-900'>
+          Үнэ (wei): <strong>{item.price}</strong>
+        </div>
 
-      <div className='my-3 text-sm text-gray-600'>
-        Үнэ: <strong>{item.price.toLocaleString()} MNT</strong>
-      </div>
+        {/* Дэлгэрэнгүй рүү орох товч */}
+        <Link href={`/marketplace/${item.id}`}>
+          <Button
+            variant='outline'
+            className='text-blue-600 border-blue-600 hover:bg-blue-100'
+          >
+            Дэлгэрэнгүй
+          </Button>
+        </Link>
 
-      <Link
-        href={`/marketplace/${item.id}`}
-        className='block rounded bg-blue-600 px-4 py-2 text-center text-white hover:bg-blue-500'
-      >
-        Дэлгэрэнгүй
-      </Link>
-    </div>
+        {/* Худалдаж авах товч */}
+        <Link href={`/marketplace/${item.id}/buy`}>
+          <Button className='bg-blue-600 text-white ml-3'>Худалдаж авах</Button>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }

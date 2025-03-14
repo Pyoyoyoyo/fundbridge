@@ -1,20 +1,23 @@
 'use client';
 
 import { ChangeEvent, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Gift, Edit, FileImage, StickyNote, PackagePlus } from 'lucide-react';
+import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
-/** Тухайн нэмэх бараа/зүйлийн төрөл */
+import rewardsIllustration from '@img/campaign/rewards-illustration.svg';
+
 interface Item {
   name: string;
   description: string;
-  image: string;
+  image: string; // IPFS link
 }
 
-/** RewardsStep компонентын проп */
 interface RewardsStepProps {
   formData: {
     rewards: {
@@ -23,75 +26,95 @@ interface RewardsStepProps {
     };
   };
   updateFormData: (fields: Partial<any>) => void;
-  // Хэрэв илүү тодорхой төрөлтэй ажиллах бол:
-  // updateFormData: (fields: Partial<FormData>) => void;
 }
 
-/**
- * RewardsStep:
- *  - `formData.rewards.items` массив дээр бараа/зүйлсийг нэмэх
- *  - Шинэ барааны зургийг preview хийж харуулах
- *  - Нийт шагналын (reward) тайлбарыг бичих
- */
 export default function RewardsStep({
   formData,
   updateFormData,
 }: RewardsStepProps) {
-  // `rewards` дотор items, description талбаруудыг шууд ашиглана
   const rewards = formData.rewards;
   const items = rewards.items ?? [];
 
-  // Шинэ бараа/зүйлийг түр хадгалах локал state
   const [newItem, setNewItem] = useState<Item>({
     name: '',
     description: '',
     image: '',
   });
 
-  /**
-   * Зураг (image/*) сонгоход FileReader ашиглан preview string үүсгэж newItem.image-т онооно
-   */
-  function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const result = ev.target?.result as string;
-        setNewItem((prev) => ({ ...prev, image: result }));
-      };
-      reader.readAsDataURL(file);
+  const [uploading, setUploading] = useState(false);
+
+  // IPFS‐д зураг upload
+  async function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/pinataUploadImage', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to upload image to IPFS');
+      }
+
+      const { ipfsUrl } = await res.json();
+      // ipfs://... эсвэл gateway link
+      setNewItem((prev) => ({ ...prev, image: ipfsUrl }));
+      alert('Шагналын зураг амжилттай upload хийгдлээ!');
+    } catch (err: any) {
+      console.error(err);
+      alert('Зураг upload алдаа: ' + err.message);
+    } finally {
+      setUploading(false);
     }
   }
 
-  /**
-   * Шинэ бараа/зүйлийг items массивт нэмэх
-   */
   function addItem() {
     if (newItem.name && newItem.description) {
-      // Одоогийн items массив дээр шинээр үүсгэсэн барааг нэмнэ
       const updatedItems = [...items, newItem];
-
-      // rewards.description хэвээр үлдээж, зөвхөн items-ийг шинэчлэх
       updateFormData({
         rewards: {
           ...rewards,
           items: updatedItems,
         },
       });
-      // Талбаруудыг буцааж хоослох
       setNewItem({ name: '', description: '', image: '' });
+    } else {
+      alert('Нэр болон тайлбар хоосон байна!');
     }
   }
 
   return (
-    <div className='space-y-6'>
-      <h2 className='text-2xl font-semibold text-gray-800'>
-        Шагнал (Rewards) үүсгэх
-      </h2>
-      <p className='text-gray-600'>
-        Төслийн шагналуудыг энд тодорхойлж, дэмжигчдэд ямар урамшуулал очихыг
-        ойлгомжтой болгоно уу.
-      </p>
+    <motion.div
+      className='flex flex-col gap-6 bg-white p-6 rounded shadow'
+      initial={{ opacity: 0, x: 50 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -50 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Дээд талд иллюстрац, гарчиг, товч тайлбар */}
+      <div className='flex flex-col items-center text-center space-y-4'>
+        <Image
+          src={rewardsIllustration}
+          alt='Rewards illustration'
+          width={760}
+          height={100}
+        />
+        <div className='flex items-center gap-2 text-xl font-semibold text-blue-600'>
+          <Gift className='w-6 h-6' />
+          <span>Шагнал (Rewards) үүсгэх</span>
+        </div>
+        <p className='text-gray-600'>
+          Төслийн шагналуудыг тодорхойлж, дэмжигчдэд ямар урамшуулал очихыг
+          тайлбарлана уу.
+        </p>
+      </div>
 
       {/* Шинэ бараа/зүйл нэмэх хэсэг */}
       <Card>
@@ -99,35 +122,67 @@ export default function RewardsStep({
           <CardTitle>Шинэ бараа/зүйл нэмэх</CardTitle>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <Input
-            placeholder='Зүйлийн нэр (жишээ: Цахим ном)'
-            value={newItem.name}
-            onChange={(e) =>
-              setNewItem((prev) => ({ ...prev, name: e.target.value }))
-            }
-          />
-          <Textarea
-            placeholder='Зүйлийн тайлбар'
-            value={newItem.description}
-            onChange={(e) =>
-              setNewItem((prev) => ({ ...prev, description: e.target.value }))
-            }
-          />
-          {newItem.image && (
-            <div className='mb-2'>
-              <img
-                src={newItem.image}
-                alt='Зураг'
-                className='h-40 w-full object-cover rounded'
-              />
-            </div>
-          )}
-          <Input type='file' accept='image/*' onChange={handleImageUpload} />
-          <p className='text-sm text-gray-500'>
-            Зураг нь JPG, PNG, GIF эсвэл WEBP байж болно, 50 MB-ээс ихгүй.
-          </p>
+          {/* Нэр */}
+          <div className='space-y-2'>
+            <label className='flex items-center gap-1 font-medium text-gray-700'>
+              <Edit className='w-4 h-4 text-gray-500' />
+              Зүйлийн нэр
+            </label>
+            <Input
+              placeholder='Жишээ: Цахим ном'
+              value={newItem.name}
+              onChange={(e) =>
+                setNewItem((prev) => ({ ...prev, name: e.target.value }))
+              }
+            />
+          </div>
+
+          {/* Тайлбар */}
+          <div className='space-y-2'>
+            <label className='flex items-center gap-1 font-medium text-gray-700'>
+              <StickyNote className='w-4 h-4 text-gray-500' />
+              Зүйлийн тайлбар
+            </label>
+            <Textarea
+              placeholder='Зүйлийн тайлбар'
+              value={newItem.description}
+              onChange={(e) =>
+                setNewItem((prev) => ({ ...prev, description: e.target.value }))
+              }
+            />
+          </div>
+
+          {/* Зураг (IPFS) */}
+          <div className='space-y-2'>
+            <label className='flex items-center gap-1 font-medium text-gray-700'>
+              <FileImage className='w-4 h-4 text-gray-500' />
+              Зураг (IPFS)
+            </label>
+            {newItem.image && (
+              <div className='mb-2'>
+                <img
+                  src={newItem.image}
+                  alt='Зураг'
+                  className='h-40 w-full object-cover rounded'
+                />
+              </div>
+            )}
+            <Input
+              type='file'
+              accept='image/*'
+              onChange={handleImageUpload}
+              disabled={uploading}
+            />
+            {uploading && (
+              <p className='text-sm text-blue-600'>Uploading image...</p>
+            )}
+            <p className='text-sm text-gray-500'>
+              JPG, PNG, GIF эсвэл WEBP (50 MB-ээс ихгүй)
+            </p>
+          </div>
 
           <Button onClick={addItem} className='bg-blue-600 text-white'>
+            <PackagePlus className='w-4 h-4 mr-2' />
             Нэмэх
           </Button>
         </CardContent>
@@ -166,20 +221,26 @@ export default function RewardsStep({
           <CardTitle>Шагналын ерөнхий тайлбар</CardTitle>
         </CardHeader>
         <CardContent>
-          <Textarea
-            placeholder="Шагналын дэлгэрэнгүй (жишээ: '100k ₮-ийн дэмжлэг өгвөл ...')"
-            value={rewards.description ?? ''}
-            onChange={(e) =>
-              updateFormData({
-                rewards: {
-                  ...rewards,
-                  description: e.target.value,
-                },
-              })
-            }
-          />
+          <div className='space-y-2'>
+            <label className='flex items-center gap-1 font-medium text-gray-700'>
+              <Gift className='w-4 h-4 text-gray-500' />
+              Шагналын дэлгэрэнгүй
+            </label>
+            <Textarea
+              placeholder='Жишээ: 100k ₮-ийн дэмжлэг өгвөл ...'
+              value={rewards.description ?? ''}
+              onChange={(e) =>
+                updateFormData({
+                  rewards: {
+                    ...rewards,
+                    description: e.target.value,
+                  },
+                })
+              }
+            />
+          </div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

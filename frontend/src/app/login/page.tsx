@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { signIn } from 'next-auth/react';
+import googleLogo from '@img/login/google-logo.png';
+import walletLogo from '@img/login/wallet-logo.png';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -106,14 +109,11 @@ export default function LoginPage() {
               className='flex items-center justify-center space-x-2 border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100'
               onClick={handleGoogleLogin}
             >
-              <img src='/google-logo.png' alt='Google' className='h-4 w-4' />
+              <Image src={googleLogo} alt='Google' className='h-4 w-4' />
               <span>Google-ээр нэвтрэх</span>
             </Button>
-            <Button
-              variant='outline'
-              className='flex items-center justify-center space-x-2 border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100'
-            >
-              <img src='/wallet-logo.png' alt='Wallet' className='h-4 w-4' />
+            <Button variant='outline'>
+              <Image src={walletLogo} alt='Google' className='h-4 w-4' />
               <span>MetaMask Wallet-ээр нэвтрэх</span>
             </Button>
           </div>

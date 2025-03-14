@@ -1,0 +1,45 @@
+<!-- public/images/campaign/payment-illustration.svg -->
+<svg viewBox="0 0 760 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Фон (760×100) -->
+  <rect width="760" height="100" fill="#ECFDF5" />
+
+  <!-- Дугуй 1 -->
+  <circle
+    cx="200"
+    cy="50"
+    r="40"
+    fill="#6EE7B7"
+    fill-opacity="0.8"
+  />
+  <!-- Дугуй 2 -->
+  <circle
+    cx="560"
+    cy="50"
+    r="30"
+    fill="#34D399"
+    fill-opacity="0.7"
+  />
+  <!-- Жижиг дөрвөлжин -->
+  <rect
+    x="340"
+    y="30"
+    width="60"
+    height="40"
+    rx="5"
+    fill="#10B981"
+    fill-opacity="0.8"
+  />
+
+  <!-- Текст (PAYMENT) -->
+  <text
+    x="50%"
+    y="50%"
+    text-anchor="middle"
+    fill="#065F46"
+    font-size="32"
+    font-weight="bold"
+    dy=".3em"
+  >
+    PAYMENT
+  </text>
+</svg>

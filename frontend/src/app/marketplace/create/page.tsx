@@ -17,23 +17,29 @@ interface CampaignInfo {
   title: string;
 }
 
+// Жишээ ханш: 1 ETH = 6,000,000 MNT
+const ETH_TO_MNT_RATE = 6_000_000;
+
 export default function MarketplaceItemCreatePage() {
   const router = useRouter();
 
   // Form талбарууд
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice] = useState(''); // MNT
+  const [price, setPrice] = useState(''); // MNT хэлбэрээр оруулна
   const [image, setImage] = useState<string | null>(null);
 
   // Кампанит ажлын drop-down
   const [campaigns, setCampaigns] = useState<CampaignInfo[]>([]);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
 
+  // Зураг upload хийж буй эсэх
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 1) Кампанит ажлуудыг татаж, drop-down дээр үзүүлнэ
+  // (1) Кампанит ажлуудыг татаж, drop-down дээр үзүүлнэ
   useEffect(() => {
     async function fetchCampaigns() {
       try {
@@ -47,7 +53,7 @@ export default function MarketplaceItemCreatePage() {
 
         const fundraising = getFundraisingContract(signer);
         const data = await fundraising.getAllCampaigns();
-        // data[i] = [id, owner, title, description, goal, raised, isActive, imageUrl, metadataHash]
+
         const parsed = data.map((c: any) => ({
           id: Number(c[0]),
           title: c[2],
@@ -61,20 +67,45 @@ export default function MarketplaceItemCreatePage() {
     fetchCampaigns();
   }, []);
 
-  // Зураг сонгох
-  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const result = ev.target?.result as string;
-        setImage(result);
-      };
-      reader.readAsDataURL(file);
+  // (2) Зураг сонгох + IPFS upload
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+
+    try {
+      // 1) Локал preview (түр харуулна)
+      const localUrl = URL.createObjectURL(file);
+      setImage(localUrl);
+
+      // 2) IPFS рүү upload
+      setUploadingImage(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/pinataUploadImage', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to upload image');
+      }
+
+      // 3) IPFS url-ийг авах
+      const { ipfsUrl } = await res.json();
+      console.log('ipfsUrl:', ipfsUrl);
+
+      // 4) state-д хадгална
+      setImage(ipfsUrl);
+    } catch (err: any) {
+      console.error(err);
+      alert('Зураг upload алдаа: ' + err.message);
+    } finally {
+      setUploadingImage(false);
     }
   }
 
-  // Item үүсгэх
+  // (3) Item үүсгэх
   async function handleCreateItem() {
     try {
       setLoading(true);
@@ -89,33 +120,34 @@ export default function MarketplaceItemCreatePage() {
       const signer = await provider.getSigner();
       const contract = getMarketplaceContract(signer);
 
-      // Үнэ шалгах
-      const priceNumber = parseInt(price, 10);
-      if (isNaN(priceNumber) || priceNumber <= 0) {
+      // Үнэ шалгах (MNT)
+      const priceMnt = parseInt(price.trim(), 10);
+      if (isNaN(priceMnt) || priceMnt <= 0) {
         alert('Үнэ талбарт зөв тоон утга оруулна уу!');
         return;
       }
-      // Кампанит ажил сонгосон эсэх
+      // Кампанит ажил сонгоогүй бол
       if (!selectedCampaignId) {
         alert('Кампанит ажил сонгоогүй байна!');
         return;
       }
 
-      // (Mock) гэрээ дуудах
       console.log('Creating item with:', {
         title,
         description,
-        priceNumber,
+        priceMnt, // <-- ШУУД MNT тоогоор дамжуулна
         campaignId: selectedCampaignId,
         image,
       });
 
+      // Гэрээ рүү priceMnt-ийг шууд дамжуулна
+      // createItem(title, desc, priceMnt, imageUrl, campaignId)
       const tx = await contract.createItem(
         title,
         description,
-        priceNumber,
-        Number(selectedCampaignId),
-        image || ''
+        priceMnt, // ШУУД integer (MNT) дамжуулна
+        image || '',
+        Number(selectedCampaignId)
       );
       await tx.wait();
 
@@ -207,7 +239,7 @@ export default function MarketplaceItemCreatePage() {
             </select>
           </div>
 
-          {/* Image file */}
+          {/* Image file (IPFS) */}
           <div>
             <label className='mb-1 block text-sm font-medium text-gray-700'>
               Зургийн файл
@@ -221,7 +253,17 @@ export default function MarketplaceItemCreatePage() {
                 />
               </div>
             )}
-            <Input type='file' accept='image/*' onChange={handleImageUpload} />
+            <Input
+              type='file'
+              accept='image/*'
+              onChange={handleImageUpload}
+              disabled={uploadingImage}
+            />
+            {uploadingImage && (
+              <p className='text-blue-600 text-sm mt-1'>
+                Зураг IPFS-д байршуулж байна...
+              </p>
+            )}
           </div>
 
           {/* Create button */}

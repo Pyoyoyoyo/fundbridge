@@ -64,6 +64,7 @@ export interface BasicsData {
   goal: string; // string хэлбэрээр хадгална
   targetLaunchDate: string;
   latePledges: boolean;
+  targetEndDate: string;
 }
 
 /**

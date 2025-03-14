@@ -116,6 +116,7 @@ export default function CampaignDonatePage() {
     return (
       <div className='min-h-screen flex items-center justify-center'>
         <Skeleton className='h-40 w-3/4 rounded-md bg-gray-300 animate-pulse' />
+        <p className='text-gray-500 mt-2'>Ачааллаж байна...</p>
       </div>
     );
   }

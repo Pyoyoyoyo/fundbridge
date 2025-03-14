@@ -1,0 +1,40 @@
+<!-- public/images/campaign/people-illustration.svg -->
+<svg viewBox="0 0 760 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="760" height="100" fill="#FEF9C3" />
+
+  <circle
+    cx="200"
+    cy="50"
+    r="40"
+    fill="#FBBF24"
+    fill-opacity="0.8"
+  />
+  <circle
+    cx="560"
+    cy="50"
+    r="30"
+    fill="#F59E0B"
+    fill-opacity="0.7"
+  />
+  <rect
+    x="340"
+    y="30"
+    width="60"
+    height="40"
+    rx="5"
+    fill="#FCD34D"
+    fill-opacity="0.8"
+  />
+
+  <text
+    x="50%"
+    y="50%"
+    text-anchor="middle"
+    fill="#78350F"
+    font-size="32"
+    font-weight="bold"
+    dy=".3em"
+  >
+    PEOPLE
+  </text>
+</svg>

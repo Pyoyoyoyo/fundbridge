@@ -15,13 +15,13 @@ export default function Footer() {
           &copy; {new Date().getFullYear()} FundBridge. Бүх эрх хамгаалагдсан.
         </p>
         <div className='flex space-x-4 text-sm'>
-          <a href='#' className='hover:underline'>
+          <a href='#' className='transition-colors hover:text-white'>
             Нууцлалын бодлого
           </a>
-          <a href='#' className='hover:underline'>
+          <a href='#' className='transition-colors hover:text-white'>
             Үйлчилгээний нөхцөл
           </a>
-          <a href='#' className='hover:underline'>
+          <a href='#' className='transition-colors hover:text-white'>
             Холбоо барих
           </a>
         </div>

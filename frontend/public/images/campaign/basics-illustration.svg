@@ -1,0 +1,35 @@
+<!-- public/images/campaign/basics-illustration.svg -->
+<svg viewBox="0 0 760 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Дэвсгэр (фон) -->
+  <rect width="760" height="100" fill="#E0E7FF" />
+
+  <!-- Дугуй 1 -->
+  <circle
+    cx="200"
+    cy="50"
+    r="40"
+    fill="#6366F1"
+    fill-opacity="0.8"
+  />
+  <!-- Дугуй 2 -->
+  <circle
+    cx="560"
+    cy="50"
+    r="30"
+    fill="#4F46E5"
+    fill-opacity="0.7"
+  />
+
+  <!-- Текст (BASICS) -->
+  <text
+    x="50%"
+    y="50%"
+    text-anchor="middle"
+    fill="#1E3A8A"
+    font-size="32"
+    font-weight="bold"
+    dy=".3em"
+  >
+    BASICS
+  </text>
+</svg>

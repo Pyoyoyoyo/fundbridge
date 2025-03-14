@@ -1,23 +1,47 @@
 // src/components/CTA.tsx
 'use client';
 
+import { motion } from 'framer-motion';
+
 export default function CTA() {
   return (
-    <section className='container mx-auto px-4 py-16 text-center'>
-      <h2 className='mb-4 text-2xl font-semibold text-gray-800 sm:text-3xl'>
-        Одоо эхлэхэд бэлэн үү?
-      </h2>
-      <p className='mx-auto max-w-2xl text-gray-600'>
-        FundBridge платформ дээр төслөө үүсгэж, хөрөнгө оруулалт татаж эхлээрэй.
-        Эсвэл бусад төслүүдтэй танилцан, дэмжлэг үзүүлэх боломжтой.
-      </p>
-      <div className='mt-6 flex flex-wrap justify-center gap-4'>
-        <button className='rounded bg-blue-600 px-6 py-3 text-white hover:bg-blue-500'>
-          Төслөө эхлүүлэх
-        </button>
-        <button className='rounded border border-blue-600 px-6 py-3 text-blue-600 hover:bg-blue-50'>
-          Төслүүд үзэх
-        </button>
+    <section className='relative overflow-hidden bg-gradient-to-r from-blue-600 to-blue-400 text-white'>
+      <div className='container mx-auto px-4 py-16 text-center'>
+        <motion.h2
+          className='mb-4 text-2xl font-semibold sm:text-3xl'
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+        >
+          Одоо эхлэхэд бэлэн үү?
+        </motion.h2>
+        <motion.p
+          className='mx-auto max-w-2xl'
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          viewport={{ once: true }}
+        >
+          FundBridge платформ дээр төслөө үүсгэж, хөрөнгө оруулалт татаж
+          эхлээрэй. Эсвэл бусад төслүүдтэй танилцан, дэмжлэг үзүүлэх боломжтой.
+        </motion.p>
+        <div className='mt-6 flex flex-wrap justify-center gap-4'>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className='rounded bg-white px-6 py-3 text-blue-600 hover:bg-gray-100'
+          >
+            Төслөө эхлүүлэх
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className='rounded border border-white px-6 py-3 text-white hover:bg-white hover:text-blue-600'
+          >
+            Төслүүд үзэх
+          </motion.button>
+        </div>
       </div>
     </section>
   );
