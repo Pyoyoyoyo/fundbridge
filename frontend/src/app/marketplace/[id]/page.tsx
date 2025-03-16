@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { BrowserProvider } from 'ethers';
+import { BrowserProvider, ethers } from 'ethers';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -10,17 +10,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-// Lucide icons жишээ
 import { AlertTriangle, ImageIcon, BookOpen } from 'lucide-react';
-
-// Marketplace гэрээний config
 import { getMarketplaceContract } from '@/services/marketplaceConfig';
 
-// Гэрээ MNT-ээр хадгалдаг гэж үзээд, 1 ETH = 6,000,000 MNT гэж үзье
 const ETH_TO_MNT_RATE = 6_000_000;
 
-// Хэрэв metadataHash ашиглаж IPFS JSON татах бол (жишээ fallback функц)
 async function fetchMetadataWithFallback(cid: string) {
   const gateways = [
     `/api/pinataDownload?cid=${cid}`,
@@ -52,15 +46,14 @@ interface ItemMetadata {
 interface MarketplaceItem {
   id: number;
   seller: string;
-  buyer: string; // [2]
-  title: string; // [3]
-  description: string; // [4]
-  price: number; // [5] - Гэрээнд MNT integer гэж үзэж байна
-  imageUrl: string; // [6]
-  campaignId: number; // [7]
-  isSold: boolean; // [8]
-  isActive: boolean; // [9]
-  // metadataHash?: string; // Хэрэв гэрээнд metadataHash талбар байвал
+  buyer: string;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  campaignId: number;
+  isSold: boolean;
+  isActive: boolean;
 }
 
 export default function MarketplaceDetailPage() {
@@ -92,7 +85,6 @@ export default function MarketplaceDetailPage() {
         const signer = await provider.getSigner();
         const contract = getMarketplaceContract(signer);
 
-        // 1) itemCount шалгах
         const itemCountBn = await contract.itemCount();
         const itemCount = Number(itemCountBn);
         if (itemId > itemCount) {
@@ -102,18 +94,15 @@ export default function MarketplaceDetailPage() {
           return;
         }
 
-        // 2) getItem(itemId) → struct дараалал: [id, seller, buyer, title, desc, price(MNT), imageUrl, campaignId, isSold, isActive, ...]
         const raw = await contract.getItem(itemId);
         console.log('getItem raw =', raw);
 
-        // Массив задлах (жишээ struct: 0..9)
         const parsed: MarketplaceItem = {
           id: Number(raw[0]),
           seller: raw[1],
           buyer: raw[2],
           title: raw[3],
           description: raw[4],
-          // Энд price нь MNT integer гэж үзэж байгаа тул шууд Number(...) авч байна
           price: Number(raw[5]),
           imageUrl: raw[6],
           campaignId: Number(raw[7]),
@@ -122,16 +111,6 @@ export default function MarketplaceDetailPage() {
         };
 
         setItem(parsed);
-
-        // 3) Хэрэв metadataHash байвал IPFS-ээс татах (жишээ)
-        // if (parsed.metadataHash) {
-        //   try {
-        //     const metaJson = await fetchMetadataWithFallback(parsed.metadataHash);
-        //     setMetadata(metaJson);
-        //   } catch (metaErr) {
-        //     console.warn('Failed to fetch item metadata:', metaErr);
-        //   }
-        // }
       } catch (err: any) {
         console.error('Failed to fetch item detail:', err);
         setError('Алдаа гарлаа: ' + err.message);
@@ -197,13 +176,9 @@ export default function MarketplaceDetailPage() {
     );
   }
 
-  // ----- price-г MNT хэлбэрээр шууд авсан гэж үзнэ -----
-  const priceMnt = item.price; // Жишээ: 100000 MNT
-
-  // Хэрэв ETH-ээр бас харуулахыг хүсвэл MNT→ETH хөрвүүлнэ
-  const priceEth = priceMnt / ETH_TO_MNT_RATE;
-
-  // Optional animation variants
+  const priceEthString = ethers.formatEther(item.price);
+  const priceEthNum = parseFloat(priceEthString);
+  const approximateMnt = Math.floor(priceEthNum * 6_000_000);
   const fadeUp = {
     initial: { opacity: 0, y: 15 },
     animate: { opacity: 1, y: 0 },
@@ -261,13 +236,13 @@ export default function MarketplaceDetailPage() {
                 <p>
                   Үнэ (MNT):{' '}
                   <strong className='text-blue-600'>
-                    {priceMnt.toLocaleString()} MNT
+                    {approximateMnt.toLocaleString()} MNT
                   </strong>
                 </p>
                 <p>
                   Үнэ (ETH, ойролцоогоор):{' '}
                   <strong className='text-blue-600'>
-                    {priceEth.toFixed(6)} ETH
+                    {priceEthNum.toFixed(6)} ETH
                   </strong>
                 </p>
               </div>

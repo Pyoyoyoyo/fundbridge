@@ -1,4 +1,3 @@
-// src/components/Steps.tsx
 'use client';
 
 import { motion } from 'framer-motion';

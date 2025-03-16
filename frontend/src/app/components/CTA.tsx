@@ -1,7 +1,7 @@
-// src/components/CTA.tsx
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 export default function CTA() {
   return (
@@ -27,20 +27,27 @@ export default function CTA() {
           эхлээрэй. Эсвэл бусад төслүүдтэй танилцан, дэмжлэг үзүүлэх боломжтой.
         </motion.p>
         <div className='mt-6 flex flex-wrap justify-center gap-4'>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className='rounded bg-white px-6 py-3 text-blue-600 hover:bg-gray-100'
-          >
-            Төслөө эхлүүлэх
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className='rounded border border-white px-6 py-3 text-white hover:bg-white hover:text-blue-600'
-          >
-            Төслүүд үзэх
-          </motion.button>
+          {/* “Төслөө эхлүүлэх” → /campaigns/create */}
+          <Link href='/campaigns/create'>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className='rounded bg-white px-6 py-3 text-blue-600 hover:bg-gray-100'
+            >
+              Төслөө эхлүүлэх
+            </motion.button>
+          </Link>
+
+          {/* “Төслүүд үзэх” → /campaigns */}
+          <Link href='/campaigns'>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className='rounded border border-white px-6 py-3 text-white hover:bg-white hover:text-blue-600'
+            >
+              Төслүүд үзэх
+            </motion.button>
+          </Link>
         </div>
       </div>
     </section>

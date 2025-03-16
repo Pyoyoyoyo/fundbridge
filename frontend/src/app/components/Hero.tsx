@@ -1,20 +1,13 @@
-// src/components/Hero.tsx
 'use client';
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import heroImage from '@img/home/hero-image.jpg';
-
-// Жишээ нэмэлт: SVG иллюстрац (public/images/hero-bg.svg) байрлуулж болно
-// import heroBg from '@/public/images/hero-bg.svg';
 
 export default function Hero() {
   return (
     <section className='relative overflow-hidden bg-gradient-to-b from-blue-50 to-white'>
-      {/* 
-        Хэрэв хүсвэл SVG background, эсвэл Lottie animation нэмж болно
-        Жишээ нь: <Image src={heroBg} alt="Hero BG" className="absolute top-0 left-0 w-full h-auto opacity-50" />
-      */}
       <div className='container mx-auto flex flex-col-reverse items-center gap-8 px-4 py-16 md:flex-row md:py-24'>
         {/* Зүүн талд: Текст */}
         <motion.div
@@ -37,20 +30,27 @@ export default function Hero() {
             авах боломжтой.
           </p>
           <div className='mt-6 flex flex-wrap gap-4'>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className='rounded bg-blue-600 px-6 py-3 text-white hover:bg-blue-500'
-            >
-              Эхлүүлэх
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className='rounded border border-blue-600 px-6 py-3 text-blue-600 hover:bg-blue-50'
-            >
-              Хөрөнгө оруулагчид
-            </motion.button>
+            {/* Эхлүүлэх товч → campaigns/create руу шилжих */}
+            <Link href='/campaigns/create'>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className='rounded bg-blue-600 px-6 py-3 text-white hover:bg-blue-500'
+              >
+                Эхлүүлэх
+              </motion.button>
+            </Link>
+
+            {/* Хөрөнгө оруулагчид товч → campaigns эсвэл marketplace руу шилжих */}
+            <Link href='/marketplace'>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className='rounded border border-blue-600 px-6 py-3 text-blue-600 hover:bg-blue-50'
+              >
+                Хөрөнгө оруулагчид
+              </motion.button>
+            </Link>
           </div>
         </motion.div>
 

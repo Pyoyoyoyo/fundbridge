@@ -3,16 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ethers } from 'ethers';
-import { getFundraisingContract } from '@/services/contractConfig';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getFundraisingContract } from '@/services/contractConfig';
 
-// Жишээ ханш: 1 ETH ~ 6,000,000 MNT (ойролцоогоор)
-// Та бодит ханшаар тохируулж болно
-const ETH_TO_MNT_RATE = 6000000;
+// Жишээ ханш: 1 ETH ~ 6,000,000 MNT
+const ETH_TO_MNT_RATE = 6_000_000;
 
 export default function CampaignDonatePage() {
   const { id } = useParams();
@@ -20,14 +19,17 @@ export default function CampaignDonatePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Хандивын дүн (UI дээр ETH-ээр оруулна)
-  const [donationAmountEth, setDonationAmountEth] = useState('');
+  // Хандивын дүн (UI дээр MNT‐ээр оруулна)
+  const [donationAmountMnt, setDonationAmountMnt] = useState('');
+  // Хандив өгч буй эсэх (Spinner or disabled button)
+  const [donating, setDonating] = useState(false);
 
   useEffect(() => {
     async function fetchCampaign() {
       try {
         setLoading(true);
 
+        // MetaMask эсвэл fallback provider
         let provider: ethers.BrowserProvider | ethers.JsonRpcProvider;
         if ((window as any)?.ethereum) {
           provider = new ethers.BrowserProvider((window as any).ethereum);
@@ -38,17 +40,14 @@ export default function CampaignDonatePage() {
 
         const contract = getFundraisingContract(provider as any);
         const data = await contract.getCampaign(Number(id));
-        // data: [id, owner, title, description, goal (wei?), raised (wei?), isActive, imageUrl, metadataHash]
+        // data: [id, owner, title, primaryCategory, description, goalWei, raisedWei, isActive, imageUrl, metadataHash, deadline]
+        // Та гэрээн доторх талбарын байрлалаа шалгаарай
+        const rawGoalWei = data[5];
+        const rawRaisedWei = data[6];
 
-        // (1) Гэрээнээс авсан дүнг parseEther биш, formatEther ашиглаж ETH болгож авч болно
-        const rawGoalWei = data[4];
-        const rawRaisedWei = data[5];
-
-        // goal, raised нь wei гэж үзээд ETH рүү хөрвүүлнэ
         const goalEth = parseFloat(ethers.formatEther(rawGoalWei));
         const raisedEth = parseFloat(ethers.formatEther(rawRaisedWei));
 
-        // (2) ETH → MNT рүү хөрвүүлнэ
         const goalMnt = Math.floor(goalEth * ETH_TO_MNT_RATE);
         const raisedMnt = Math.floor(raisedEth * ETH_TO_MNT_RATE);
 
@@ -56,15 +55,16 @@ export default function CampaignDonatePage() {
           id: Number(data[0]),
           owner: data[1],
           title: data[2],
-          description: data[3],
+          primaryCategory: data[3],
+          description: data[4],
           goalWei: rawGoalWei,
           raisedWei: rawRaisedWei,
-          // Хэрэглэгчдэд үзүүлэхдээ MNT-ээр харуулах
           goalMnt,
           raisedMnt,
-          isActive: data[6],
-          imageUrl: data[7] || '',
-          metadataHash: data[8] || '',
+          isActive: data[7],
+          imageUrl: data[8] || '',
+          metadataHash: data[9] || '',
+          deadline: Number(data[10]) || 0,
         };
 
         setCampaign(parsed);
@@ -75,12 +75,16 @@ export default function CampaignDonatePage() {
         setLoading(false);
       }
     }
+
     if (id) fetchCampaign();
   }, [id]);
 
-  // Хандив өгөх
+  // Хандив өгөх (MNT → ETH → Wei)
   async function handleDonate() {
     try {
+      // 1) donating эхлүүлнэ
+      setDonating(true);
+
       if (!window.ethereum) {
         alert('MetaMask not found!');
         return;
@@ -90,15 +94,21 @@ export default function CampaignDonatePage() {
       const signer = await provider.getSigner();
       const contract = getFundraisingContract(signer);
 
-      if (!donationAmountEth) {
-        alert('Хандивын дүн (ETH) оруулна уу!');
+      // MNT оруулаагүй бол
+      if (!donationAmountMnt || Number(donationAmountMnt) <= 0) {
+        alert('Хандивын дүн (MNT) оруулна уу!');
         return;
       }
 
-      // (3) Хэрэглэгчээс оруулсан ETH-ийг wei болгон хөрвүүлнэ
-      const donationWei = ethers.parseEther(donationAmountEth);
+      // 2) MNT → ETH
+      const mntValue = parseFloat(donationAmountMnt);
+      const ethValue = mntValue / ETH_TO_MNT_RATE;
 
-      // contract.donate(campaignId) payable {...} гэж үзэж байна
+      // toFixed(18) → parseEther
+      const ethString = ethValue.toFixed(18);
+      const donationWei = ethers.parseEther(ethString);
+
+      // 3) donate(campaignId) + { value: donationWei }
       const tx = await contract.donate(Number(id), {
         value: donationWei,
       });
@@ -109,12 +119,15 @@ export default function CampaignDonatePage() {
     } catch (err) {
       console.error(err);
       alert('Хандивын явцад алдаа гарлаа: ' + (err as Error).message);
+    } finally {
+      // 4) donating дууслаа
+      setDonating(false);
     }
   }
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
+      <div className='min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-blue-50'>
         <Skeleton className='h-40 w-3/4 rounded-md bg-gray-300 animate-pulse' />
         <p className='text-gray-500 mt-2'>Ачааллаж байна...</p>
       </div>
@@ -142,11 +155,10 @@ export default function CampaignDonatePage() {
     );
   }
 
-  // MNT-р харуулахын тулд campaign.goalMnt, campaign.raisedMnt ашиглана
-  const progressPercent = Math.min(
-    (campaign.raisedMnt / campaign.goalMnt) * 100,
-    100
-  ).toFixed(0);
+  // MNT‐ийн хувьд дэлгэцэнд харуулах progress
+  const progressPercent = campaign.goalMnt
+    ? Math.min((campaign.raisedMnt / campaign.goalMnt) * 100, 100).toFixed(0)
+    : '0';
 
   return (
     <div className='min-h-screen bg-gradient-to-b from-white to-blue-50 p-8 flex flex-col items-center gap-6 animate-in fade-in'>
@@ -179,35 +191,36 @@ export default function CampaignDonatePage() {
                 <span>
                   Зорилго:{' '}
                   <strong className='font-medium'>
-                    {campaign.goalMnt} MNT
+                    {campaign.goalMnt.toLocaleString()} MNT
                   </strong>
                 </span>
                 <span>
                   Цугласан:{' '}
                   <strong className='font-medium text-blue-600'>
-                    {campaign.raisedMnt} MNT
+                    {campaign.raisedMnt.toLocaleString()} MNT
                   </strong>
                 </span>
               </div>
             </div>
 
-            {/* Хандивын дүн оруулах хэсэг (ETH) */}
+            {/* Хандивын дүн (MNT) оруулах хэсэг */}
             <div className='flex flex-col gap-2'>
               <label className='text-sm text-gray-600'>
-                Хандивын дүн (ETH)
+                Хандивын дүн (MNT)
               </label>
               <input
                 type='number'
-                step='0.0001'
+                step='1'
                 min='0'
-                value={donationAmountEth}
-                onChange={(e) => setDonationAmountEth(e.target.value)}
+                value={donationAmountMnt}
+                onChange={(e) => setDonationAmountMnt(e.target.value)}
                 className='
                   border border-gray-300 rounded px-3 py-2 
                   focus:outline-none focus:ring-2 focus:ring-blue-500 
                   transition-colors
                 '
-                placeholder='Жишээ нь 0.01'
+                placeholder='Жишээ нь 10000'
+                disabled={donating}
               />
               <p className='text-xs text-gray-500'>
                 1 ETH ~ {ETH_TO_MNT_RATE.toLocaleString('en-US')} MNT
@@ -218,8 +231,9 @@ export default function CampaignDonatePage() {
             <Button
               className='bg-blue-600 hover:bg-blue-500 text-white w-full py-2'
               onClick={handleDonate}
+              disabled={donating}
             >
-              Хандив өгөх
+              {donating ? 'Илгээж байна...' : 'Хандив өгөх'}
             </Button>
           </CardContent>
         </Card>

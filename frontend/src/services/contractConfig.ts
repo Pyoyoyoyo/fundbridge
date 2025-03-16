@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-export const CONTRACT_ADDRESS = '0xE4e06C7202883072Bb43202820E69bea3EdF7139';
+export const CONTRACT_ADDRESS = '0xa5B99Dc1ab25528EbC62193Eb36280CC6BF57963';
 export const CONTRACT_ABI = [
   {
     inputs: [],
@@ -154,6 +154,11 @@ export const CONTRACT_ABI = [
       },
       {
         internalType: 'string',
+        name: 'primaryCategory',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
         name: 'description',
         type: 'string',
       },
@@ -209,6 +214,11 @@ export const CONTRACT_ABI = [
       {
         internalType: 'string',
         name: '_title',
+        type: 'string',
+      },
+      {
+        internalType: 'string',
+        name: '_primaryCategory',
         type: 'string',
       },
       {
@@ -302,6 +312,11 @@ export const CONTRACT_ABI = [
           },
           {
             internalType: 'string',
+            name: 'primaryCategory',
+            type: 'string',
+          },
+          {
+            internalType: 'string',
             name: 'description',
             type: 'string',
           },
@@ -363,6 +378,11 @@ export const CONTRACT_ABI = [
         internalType: 'address',
         name: '',
         type: 'address',
+      },
+      {
+        internalType: 'string',
+        name: '',
+        type: 'string',
       },
       {
         internalType: 'string',

@@ -22,6 +22,7 @@ import {
   Info,
   ImageIcon,
 } from 'lucide-react';
+import DonateButton from '@/components/ui/DonateButton';
 
 const ETH_TO_MNT_RATE = 6_000_000;
 
@@ -115,9 +116,24 @@ export default function CampaignDetailPage() {
         const contract = getFundraisingContract(provider);
         const data = await contract.getCampaign(Number(id));
 
-        // data: [id, owner, title, desc, goalWei, raisedWei, isActive, imageUrl, metadataHash, deadline]
-        const rawGoalWei = data[4];
-        const rawRaisedWei = data[5];
+        /**
+         * Гэрээнээс буцаж ирэх дараалал:
+         * data = [
+         *   0: id,
+         *   1: owner,
+         *   2: title,
+         *   3: campaignCategory,
+         *   4: description,
+         *   5: goalWei,
+         *   6: raisedWei,
+         *   7: isActive,
+         *   8: imageUrl,
+         *   9: metadataHash,
+         *   10: deadline
+         * ]
+         */
+        const rawGoalWei = data[5];
+        const rawRaisedWei = data[6];
 
         const goalEth = parseFloat(ethers.formatEther(rawGoalWei));
         const raisedEth = parseFloat(ethers.formatEther(rawRaisedWei));
@@ -129,19 +145,21 @@ export default function CampaignDetailPage() {
           id: Number(data[0]),
           owner: data[1],
           title: data[2],
-          description: data[3],
+          category: data[3], // ← "campaignCategory" буюу "primaryCategory"
+          description: data[4],
           goalWei: rawGoalWei,
           raisedWei: rawRaisedWei,
           goalMnt,
           raisedMnt,
-          isActive: data[6],
-          imageUrl: data[7] || '',
-          metadataHash: data[8] || '',
-          deadline: Number(data[9]),
+          isActive: data[7],
+          imageUrl: data[8] || '',
+          metadataHash: data[9] || '',
+          deadline: Number(data[10]),
         };
+
         setCampaign(parsed);
 
-        // 3) IPFS metadata татах (fallback-тайгаар)
+        // 3) Хэрэв metadataHash байвал IPFS‐ээс татах
         if (parsed.metadataHash) {
           try {
             const metaJson = await fetchMetadataWithFallback(
@@ -165,7 +183,7 @@ export default function CampaignDetailPage() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
+      <div className='min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-blue-50'>
         <Skeleton className='h-40 w-3/4 rounded-md bg-gray-300 animate-pulse' />
         <p className='text-gray-500 mt-2'>Ачааллаж байна...</p>
       </div>
@@ -217,6 +235,11 @@ export default function CampaignDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className='p-4 flex flex-col gap-4'>
+              {/* Campaign Category */}
+              <p className='text-sm text-gray-600 mb-1'>
+                <strong className='text-blue-600'>{campaign.category}</strong>
+              </p>
+
               <p className='text-gray-800'>{campaign.description}</p>
 
               {campaign.imageUrl && (
@@ -258,10 +281,11 @@ export default function CampaignDetailPage() {
                 </div>
               </div>
 
-              {/* DonateButton нь таны бэлтгэсэн donate хийх UI / logic байхыг санана */}
-              <Button className='w-full py-2 bg-blue-600 hover:bg-blue-500 text-white'>
-                Хандив өгөх
-              </Button>
+              {/* DonateButton */}
+              <DonateButton
+                campaignId={campaign.id}
+                className='w-full py-2 bg-blue-600 hover:bg-blue-500 text-white'
+              />
             </CardContent>
           </Card>
         </motion.div>

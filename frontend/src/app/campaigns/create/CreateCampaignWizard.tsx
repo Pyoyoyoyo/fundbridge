@@ -176,6 +176,7 @@ export default function CreateCampaignWizard() {
       // 4) createCampaign дуудлага
       const tx = await contract.createCampaign(
         title,
+        formData.basics.primaryCategory,
         formData.basics.description,
         goalWei, // wei хэлбэр гэж үзвэл, 10**18-р үржүүлж болно
         formData.basics.imageUrl,

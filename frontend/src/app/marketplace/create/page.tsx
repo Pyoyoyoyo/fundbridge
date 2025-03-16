@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { BrowserProvider, ethers } from 'ethers';
+
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { BrowserProvider, ethers } from 'ethers';
 
-// Marketplace гэрээтэй холбогдох service/файл
 import { getMarketplaceContract } from '@/services/marketplaceConfig';
-// Fundraising гэрээтэй холбогдох service/файл
 import { getFundraisingContract } from '@/services/contractConfig';
 
+// Кампанит ажлын мэдээлэл
 interface CampaignInfo {
   id: number;
   title: string;
@@ -36,13 +36,19 @@ export default function MarketplaceItemCreatePage() {
   // Зураг upload хийж буй эсэх
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Үүсгэж буй явц, алдаа
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // (1) Кампанит ажлуудыг татаж, drop-down дээр үзүүлнэ
+  /**
+   * -------------------------------------------------
+   * 1) Кампанит ажлуудыг татаж, drop-down дээр үзүүлэх
+   * -------------------------------------------------
+   */
   useEffect(() => {
     async function fetchCampaigns() {
       try {
+        // MetaMask шалгах
         if (!(window as any).ethereum) {
           console.warn('MetaMask not found');
           return;
@@ -51,12 +57,14 @@ export default function MarketplaceItemCreatePage() {
         await provider.send('eth_requestAccounts', []);
         const signer = await provider.getSigner();
 
+        // Fundraising гэрээнээс бүх кампанит ажлыг татна
         const fundraising = getFundraisingContract(signer);
         const data = await fundraising.getAllCampaigns();
 
+        // data[i] = [id, owner, title, ...]
         const parsed = data.map((c: any) => ({
           id: Number(c[0]),
-          title: c[2],
+          title: c[2] as string,
         }));
         setCampaigns(parsed);
       } catch (err) {
@@ -67,15 +75,19 @@ export default function MarketplaceItemCreatePage() {
     fetchCampaigns();
   }, []);
 
-  // (2) Зураг сонгох + IPFS upload
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  /**
+   * -------------------------------------------------
+   * 2) Зураг сонгох + IPFS upload (Pinata)
+   * -------------------------------------------------
+   */
+  async function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
 
     try {
       // 1) Локал preview (түр харуулна)
-      const localUrl = URL.createObjectURL(file);
-      setImage(localUrl);
+      const localPreview = URL.createObjectURL(file);
+      setImage(localPreview);
 
       // 2) IPFS рүү upload
       setUploadingImage(true);
@@ -91,11 +103,11 @@ export default function MarketplaceItemCreatePage() {
         throw new Error(errData.error || 'Failed to upload image');
       }
 
-      // 3) IPFS url-ийг авах
+      // 3) Pinata-аас буцаж ирсэн gateway URL-ийг авах
       const { ipfsUrl } = await res.json();
       console.log('ipfsUrl:', ipfsUrl);
 
-      // 4) state-д хадгална
+      // 4) state-д хадгална (public URL болж хадгалагдана)
       setImage(ipfsUrl);
     } catch (err: any) {
       console.error(err);
@@ -105,12 +117,17 @@ export default function MarketplaceItemCreatePage() {
     }
   }
 
-  // (3) Item үүсгэх
+  /**
+   * -------------------------------------------------
+   * 3) Item үүсгэх (MNT → ETH → Wei)
+   * -------------------------------------------------
+   */
   async function handleCreateItem() {
     try {
       setLoading(true);
       setError(null);
 
+      // MetaMask шалгах
       if (!window.ethereum) {
         alert('MetaMask not found!');
         return;
@@ -120,12 +137,21 @@ export default function MarketplaceItemCreatePage() {
       const signer = await provider.getSigner();
       const contract = getMarketplaceContract(signer);
 
-      // Үнэ шалгах (MNT)
+      // Үнэ (MNT)
       const priceMnt = parseInt(price.trim(), 10);
       if (isNaN(priceMnt) || priceMnt <= 0) {
         alert('Үнэ талбарт зөв тоон утга оруулна уу!');
         return;
       }
+
+      // MNT -> ETH
+      const priceEthRaw = priceMnt / ETH_TO_MNT_RATE; // float
+      // 18 оронтой болгож тайрна
+      const priceEthTrimmed = parseFloat(priceEthRaw.toFixed(18));
+
+      // ETH -> wei
+      const priceWei = ethers.parseEther(priceEthTrimmed.toString());
+
       // Кампанит ажил сонгоогүй бол
       if (!selectedCampaignId) {
         alert('Кампанит ажил сонгоогүй байна!');
@@ -135,17 +161,20 @@ export default function MarketplaceItemCreatePage() {
       console.log('Creating item with:', {
         title,
         description,
-        priceMnt, // <-- ШУУД MNT тоогоор дамжуулна
+        priceMnt,
+        priceEthRaw,
+        priceEthTrimmed,
+        priceWei: priceWei.toString(),
         campaignId: selectedCampaignId,
         image,
       });
 
-      // Гэрээ рүү priceMnt-ийг шууд дамжуулна
-      // createItem(title, desc, priceMnt, imageUrl, campaignId)
+      // Гэрээний createItem(...) дуудах
+      // createItem(title, description, priceWei, imageUrl, campaignId)
       const tx = await contract.createItem(
         title,
         description,
-        priceMnt, // ШУУД integer (MNT) дамжуулна
+        priceWei,
         image || '',
         Number(selectedCampaignId)
       );
@@ -153,9 +182,9 @@ export default function MarketplaceItemCreatePage() {
 
       alert('Item амжилттай үүслээ!');
       router.push('/marketplace');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Алдаа гарлаа: ' + (err as Error).message);
+      alert('Алдаа гарлаа: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -168,6 +197,7 @@ export default function MarketplaceItemCreatePage() {
           <span className='text-blue-600'>Item</span> зарах
         </h1>
 
+        {/* Алдаа гарвал */}
         {error && (
           <div className='mb-4 p-3 border border-red-300 bg-red-50 text-red-600 rounded'>
             {error}
