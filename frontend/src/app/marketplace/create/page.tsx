@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 
 import { getMarketplaceContract } from '@/services/marketplaceConfig';
-import { getFundraisingContract } from '@/services/contractConfig';
+import { getFundraisingContract } from '@/services/fundraisingConfig';
 
 // Кампанит ажлын мэдээлэл
 interface CampaignInfo {
@@ -61,11 +61,14 @@ export default function MarketplaceItemCreatePage() {
         const fundraising = getFundraisingContract(signer);
         const data = await fundraising.getAllCampaigns();
 
-        // data[i] = [id, owner, title, ...]
-        const parsed = data.map((c: any) => ({
-          id: Number(c[0]),
-          title: c[2] as string,
-        }));
+        // data[i] = [id, owner, title, primaryCategory, description, goal, raised, isActive, imageUrl, metadataHash, deadline]
+        // Filter only active campaigns (isActive is at index 7)
+        const parsed = data
+          .filter((c: any) => c[7])
+          .map((c: any) => ({
+            id: Number(c[0]),
+            title: c[2] as string,
+          }));
         setCampaigns(parsed);
       } catch (err) {
         console.error('Failed to fetch campaigns:', err);
@@ -157,18 +160,6 @@ export default function MarketplaceItemCreatePage() {
         alert('Кампанит ажил сонгоогүй байна!');
         return;
       }
-
-      console.log('Creating item with:', {
-        title,
-        description,
-        priceMnt,
-        priceEthRaw,
-        priceEthTrimmed,
-        priceWei: priceWei.toString(),
-        campaignId: selectedCampaignId,
-        image,
-      });
-
       // Гэрээний createItem(...) дуудах
       // createItem(title, description, priceWei, imageUrl, campaignId)
       const tx = await contract.createItem(

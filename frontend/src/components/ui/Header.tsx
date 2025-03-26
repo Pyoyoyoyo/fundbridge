@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import Logo from './Logo';
 // NextAuth
 import { useSession, signOut } from 'next-auth/react';
+import { profile } from 'console';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);

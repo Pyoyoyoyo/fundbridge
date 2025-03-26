@@ -1,6 +1,7 @@
 import { ethers } from 'hardhat';
 
 async function main() {
+  const KYCAddress = '0x6938516235eD21476Fe5feC0109fb748C429103c';
   // Анх "FundraisingContract" гэхэд олон artifact олдож зөрчилдсөн
   // Тиймээс fully qualified name ашиглана:
   const FundraisingFactory = await ethers.getContractFactory(

@@ -4,48 +4,54 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ethers } from 'ethers';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
-import { getFundraisingContract } from '@/services/contractConfig';
+import { getFundraisingContract } from '@/services/fundraisingConfig';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import DonateButton from '@/components/ui/DonateButton';
-
-// Lucide icons
 import { Search, Filter, XCircle } from 'lucide-react';
+import { Campaign } from '@/app/interfaces';
+import { CampaignCard } from '@/components/campaign/CampaignCard';
 
-// 1 ETH ~ 6,000,000 MNT (жишээ ханш)
+// Жишээ ханш
 const ETH_TO_MNT_RATE = 6_000_000;
 
-interface Campaign {
-  id: number;
-  owner: string;
-  title: string;
-  primaryCategory: string; // "Хандив" эсвэл "Хөрөнгө оруулалт"
-  description: string;
-  goalWei: bigint;
-  raisedWei: bigint;
-  goalMnt: number;
-  raisedMnt: number;
-  isActive: boolean;
-  imageUrl: string;
-  metadataHash: string;
+// --------- ТӨЛӨВ ТООЦОХ ФУНКЦ ---------
+function computeStatus(c: Campaign): string {
+  // Хугацаа дууссан (isActive=false) эсвэл идэвхтэй (isActive=true)
+  if (!c.isActive) {
+    // raisedWei >= goalWei => амжилттай
+    if (c.raisedWei >= c.goalWei) {
+      return 'Хугацаа дууссан (Амжилттай)';
+    } else {
+      return 'Хугацаа дууссан (Амжилтгүй)';
+    }
+  } else {
+    // isActive = true
+    if (c.raisedWei === BigInt(0)) {
+      return 'Шинээр үүссэн';
+    } else {
+      return 'Хэрэгжиж байгаа';
+    }
+  }
 }
 
 export default function CampaignsPage() {
+  const router = useRouter();
   const { data: session } = useSession();
+
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Хайлт & фильтрийн state
+  // Хайлт & Фильтрийн state
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState(''); // 'хандив', 'хөрөнгө оруулалт', эсвэл ''
+  const [statusFilter, setStatusFilter] = useState(''); // 'Шинээр үүссэн', 'Хэрэгжиж байгаа', 'Хугацаа дууссан (Амжилттай)', 'Хугацаа дууссан (Амжилтгүй)' эсвэл ''
 
-  // 1) currentUser
+  // 1) currentUser (Metamask address)
   useEffect(() => {
     async function detectUser() {
       if ((window as any)?.ethereum) {
@@ -72,26 +78,13 @@ export default function CampaignsPage() {
         }
 
         const contract = getFundraisingContract(provider);
-        const data = await contract.getAllCampaigns();
-        // data[i] = struct Campaign:
-        // [
-        //   id, owner, title, primaryCategory, description,
-        //   goal, raised, isActive, imageUrl, metadataHash, deadline
-        // ]
+        const allCampaigns = await contract.getAllCampaigns();
 
-        const parsedCampaigns: Campaign[] = data.map((c: any) => {
-          // c[0] => id
-          // c[1] => owner
-          // c[2] => title
-          // c[3] => primaryCategory
-          // c[4] => description
-          // c[5] => goal (wei)
-          // c[6] => raised (wei)
-          // c[7] => isActive
-          // c[8] => imageUrl
-          // c[9] => metadataHash
-          // c[10] => deadline (timestamp) -- хэрэв танд хэрэгтэй бол ашиглаж болно
+        // Энэ жишээнд зөвхөн isActive=true кампанит ажлуудыг авна (хэрэв бүгдийг үзүүлэх бол энэ хэсгийг өөрчил)
+        const activeOnes = allCampaigns.filter((c: any) => c.isActive);
 
+        // parse
+        const parsedCampaigns: Campaign[] = allCampaigns.map((c: any) => {
           const goalWei = c[5] as bigint;
           const raisedWei = c[6] as bigint;
 
@@ -138,14 +131,20 @@ export default function CampaignsPage() {
       camp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       camp.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // (B) primaryCategory ашиглан шүүх (e.g. "хандив" эсвэл "хөрөнгө оруулалт")
-    // Жишээ нь гэрээнд "Хандив" гэж хадгалсан бол доор "хандив"‐д toLowerCase тааруулна
+    // (B) Ангилал (primaryCategory) ашиглан шүүх
     const matchFilter =
       filterType === ''
         ? true
         : camp.primaryCategory.toLowerCase() === filterType.toLowerCase();
 
-    return matchSearch && matchFilter;
+    // (C) Төлөв (statusFilter) ашиглан шүүх
+    const campaignStatus = computeStatus(camp); // "Шинээр үүссэн", "Хэрэгжиж байгаа", "Хугацаа дууссан (Амжилттай)", "Хугацаа дууссан (Амжилтгүй)"
+    const matchStatus =
+      statusFilter === ''
+        ? true
+        : campaignStatus.toLowerCase() === statusFilter.toLowerCase();
+
+    return matchSearch && matchFilter && matchStatus;
   });
 
   return (
@@ -155,6 +154,7 @@ export default function CampaignsPage() {
           Бүх кампанит ажлууд
         </h1>
 
+        {/* createCampaign товч -- Link биш, Button хэлбэр */}
         {session?.user && (
           <Link href='/campaigns/create'>
             <Button className='bg-blue-600 hover:bg-blue-500 text-white'>
@@ -208,6 +208,26 @@ export default function CampaignsPage() {
             <option value='хөрөнгө оруулалт'>Хөрөнгө оруулалт</option>
           </select>
         </div>
+
+        {/* Төлөвөөр шүүх */}
+        <div className='relative'>
+          <Filter className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5' />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className='pl-9 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500'
+          >
+            <option value=''>Төлөвөөр шүүх</option>
+            <option value='Шинээр үүссэн'>Шинээр үүссэн</option>
+            <option value='Хэрэгжиж байгаа'>Хэрэгжиж байгаа</option>
+            <option value='Хугацаа дууссан (Амжилттай)'>
+              Хугацаа дууссан (Амжилттай)
+            </option>
+            <option value='Хугацаа дууссан (Амжилтгүй)'>
+              Хугацаа дууссан (Амжилтгүй)
+            </option>
+          </select>
+        </div>
       </div>
 
       {loading ? (
@@ -230,86 +250,5 @@ export default function CampaignsPage() {
         </div>
       )}
     </div>
-  );
-}
-
-// ----------------- CampaignCard -----------------
-function CampaignCard({
-  campaign,
-  currentUser,
-}: {
-  campaign: Campaign;
-  currentUser: string | null;
-}) {
-  // Дэвшил % (MNT)
-  const progress =
-    campaign.goalMnt > 0
-      ? Math.min((campaign.raisedMnt / campaign.goalMnt) * 100, 100).toFixed(0)
-      : '0';
-
-  // Эзэмшигч мөн эсэх
-  const isOwner =
-    currentUser && currentUser.toLowerCase() === campaign.owner.toLowerCase();
-
-  return (
-    <Card className='bg-gray-100 shadow-lg hover:shadow-xl transition-shadow'>
-      {campaign.imageUrl && (
-        <img
-          src={campaign.imageUrl}
-          alt={campaign.title}
-          className='h-40 w-full object-cover rounded-t-lg'
-        />
-      )}
-      <CardHeader className='bg-blue-100 text-blue-600 p-4'>
-        <CardTitle>{campaign.title}</CardTitle>
-      </CardHeader>
-      <CardContent className='p-4'>
-        {/* primaryCategory‐г илүү тод харуулах жишээ */}
-        <p className='text-sm text-gray-600 mb-1'>
-          <strong className='text-blue-600'>{campaign.primaryCategory}</strong>
-        </p>
-
-        <p className='text-gray-900 mb-2'>{campaign.description}</p>
-
-        <Progress value={parseFloat(progress)} className='my-3 bg-gray-300' />
-        <div className='mb-3 flex justify-between text-sm text-gray-900'>
-          <span>
-            Зорилго:{' '}
-            <strong className='text-blue-600'>
-              {campaign.goalMnt.toLocaleString()} MNT
-            </strong>
-          </span>
-          <span>
-            Цугласан:{' '}
-            <strong className='text-blue-600'>
-              {campaign.raisedMnt.toLocaleString()} MNT
-            </strong>
-          </span>
-        </div>
-
-        <div className='flex items-center gap-2'>
-          <Link href={`/campaigns/${campaign.id}`}>
-            <Button
-              variant='outline'
-              className='text-blue-600 border-blue-600 hover:bg-blue-100'
-            >
-              Дэлгэрэнгүй
-            </Button>
-          </Link>
-          {/* Хандивын товч */}
-          <DonateButton
-            campaignId={campaign.id}
-            className='bg-blue-600 hover:bg-blue-500 text-white'
-          />
-        </div>
-
-        {/* Эзэмшигчийн хувьд илүү мэдээлэл харуулах (жишээ) */}
-        {isOwner && (
-          <p className='mt-3 text-sm text-green-600 font-medium'>
-            Та энэ кампанит ажлын эзэмшигч байна.
-          </p>
-        )}
-      </CardContent>
-    </Card>
   );
 }

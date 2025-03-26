@@ -175,8 +175,9 @@ contract MarketplaceContract {
         mItem.isActive = false;
         mItem.buyer = msg.sender;
 
-        // 2) Орлогыг FundraisingContract руу donate(...) функцээр дамжуулна
-        // (гэхдээ FundraisingContract нь campaignId‐д raised += msg.value хийдэг)
+        // 2) Fundraising руу donate(_campaignId) дуудлага илгээнэ
+        // IFundraising интерфэйсийг ашиглаж болно, эсвэл .call ашиглаж болно
+        // Энд бид call ашиглаж байна:
         (bool success, ) = fundraisingContract.call{value: msg.value}(
             abi.encodeWithSignature("donate(uint256)", mItem.campaignId)
         );

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ethers } from 'ethers';
-import { getFundraisingContract } from '@/services/contractConfig';
+import { getFundraisingContract } from '@/services/fundraisingConfig';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';

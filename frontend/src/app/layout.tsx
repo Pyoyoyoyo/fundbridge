@@ -1,8 +1,7 @@
-// src/app/layout.tsx
 import './globals.css';
 import Header from '../components/ui/Header';
 import { Metadata } from 'next';
-import Providers from './providers';
+import Providers from '../providers/providers';
 
 export const metadata: Metadata = {
   title: 'FundBridge',
@@ -19,7 +18,14 @@ export default function RootLayout({
       <body className='min-h-screen bg-gray-50'>
         <Providers>
           <Header />
-          <main className='container mx-auto py-8'>{children}</main>
+          <main className='container mx-auto py-8'>
+            {/**
+             * ТУХАЙН ROOT LAYOUT-Д @stripe/react-stripe-js ОРУУЛАХ ШААРДЛАГАГҮЙ
+             * Хэрэв бүх child-д нэгэн зэрэг хэрэглэх бол энд StripeProvider-ээр ороож болно
+             * Гэхдээ layout.tsx нь server component тул шууд import хийж болохгүй!
+             */}
+            {children}
+          </main>
         </Providers>
       </body>
     </html>

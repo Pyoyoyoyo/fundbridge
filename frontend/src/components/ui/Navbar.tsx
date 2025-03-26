@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X } from 'lucide-react'; // эсвэл бусад icon
+import { Menu, X } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 
 export default function NavBar() {
@@ -12,20 +12,14 @@ export default function NavBar() {
   const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Гол линкүүд
   const links = [
     { href: '/', label: 'Home' },
     { href: '/campaigns', label: 'Campaigns' },
     { href: '/marketplace', label: 'Marketplace' },
   ];
-
-  // "Кампанит ажил үүсгэх" товчийг зөвхөн нэвтэрсэн үед нэмье
-  // Та хүсвэл links массив дотор нэмсэн ч болно.
   const createLink = { href: '/campaigns/create', label: 'Create' };
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
+  const toggleMenu = () => setIsOpen(!isOpen);
 
   async function handleLogout() {
     await signOut({ callbackUrl: '/' });
@@ -53,7 +47,7 @@ export default function NavBar() {
             </Link>
           );
         })}
-        {/* Зөвхөн нэвтэрсэн үед "Create" товч харагдах */}
+        {/* Нэвтэрсэн үед "Create" товч */}
         {session?.user && (
           <Link
             href={createLink.href}
@@ -68,7 +62,7 @@ export default function NavBar() {
         )}
       </nav>
 
-      {/* Mobile menu button (hamburger / close icon) */}
+      {/* Mobile menu button */}
       <button
         onClick={toggleMenu}
         className='ml-2 inline-flex items-center justify-center rounded p-2 text-gray-700 hover:bg-gray-100 focus:outline-none md:hidden'
@@ -81,7 +75,7 @@ export default function NavBar() {
         {isLoading ? (
           <span className='text-sm text-gray-500'>Loading...</span>
         ) : session?.user ? (
-          // If logged in -> show profile image + dropdown
+          // If logged in -> show profile image + DID / logout
           <ProfileDropdown sessionUser={session.user} onLogout={handleLogout} />
         ) : (
           // If not logged in -> show Login button
@@ -94,7 +88,7 @@ export default function NavBar() {
         )}
       </div>
 
-      {/* Mobile menu panel (only visible on small screens if isOpen) */}
+      {/* Mobile menu panel */}
       {isOpen && (
         <nav className='absolute left-0 top-16 z-50 w-full bg-white shadow md:hidden'>
           <ul className='flex flex-col space-y-1 p-4'>
@@ -104,7 +98,7 @@ export default function NavBar() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    onClick={() => setIsOpen(false)} // close menu after clicking
+                    onClick={() => setIsOpen(false)}
                     className={`block rounded px-3 py-2 transition-colors duration-200 ${
                       isActive
                         ? 'bg-blue-50 text-blue-700'
@@ -116,7 +110,6 @@ export default function NavBar() {
                 </li>
               );
             })}
-            {/* Зөвхөн session байгаа үед "Create" */}
             {session?.user && (
               <li>
                 <Link
@@ -139,7 +132,7 @@ export default function NavBar() {
   );
 }
 
-// Тусад нь ProfileDropdown компонент
+// ProfileDropdown
 function ProfileDropdown({
   sessionUser,
   onLogout,
@@ -162,7 +155,7 @@ function ProfileDropdown({
         onClick={toggle}
       />
       {open && (
-        <div className='absolute right-0 mt-2 w-40 bg-white border rounded shadow-md'>
+        <div className='absolute right-0 mt-2 w-48 bg-white border rounded shadow-md'>
           <Link
             href='/profile'
             className='block px-4 py-2 text-gray-700 hover:bg-gray-100'

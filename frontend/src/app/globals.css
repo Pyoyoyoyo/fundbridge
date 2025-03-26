@@ -74,3 +74,57 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  @keyframes gradientBG {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .animate-gradient {
+    background: linear-gradient(270deg, #ff6b6b, #feca57, #48dbfb, #5f27cd);
+    background-size: 800% 800%;
+    animation: gradientBG 8s ease infinite;
+    color: white; /* gradient дээр text цагаан байлгахыг хүсвэл */
+  }
+}
+.gradient-line {
+  /* Псевдо элемент ашиглан дээр нь gradient шугам гаргах */
+  position: relative;
+}
+
+.gradient-line::before {
+  content: '';
+  position: absolute;
+  top: 0; /* зөвхөн дээд талд харагдуулна */
+  left: 0;
+  width: 100%;
+  height: 3px; /* шугамын өндөр */
+
+  background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #5f27cd);
+  background-size: 400% 100%;
+
+  animation: gradientScroll 4s ease infinite;
+  /* border-top оронд псевдо элемент дээр background ашиглаж байна */
+  border-radius: 2px;
+}
+
+/* Gradient анимэйшн keyframes */
+@keyframes gradientScroll {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 0%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
