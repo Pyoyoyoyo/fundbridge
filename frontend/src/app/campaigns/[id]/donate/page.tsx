@@ -9,7 +9,7 @@ import { getFundraisingContract } from '@/services/fundraisingConfig';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import DonateSection from '@/components/campaign/[id]/donate/DonateSection'; // 3 tabs (fiat, eth, card)
+import DonateSection from '@/components/campaigns/[id]/donate/DonateSection'; // 3 tabs (fiat, eth, card)
 
 const ETH_TO_MNT_RATE = 6_000_000;
 

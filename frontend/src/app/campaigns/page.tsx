@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Search, Filter, XCircle } from 'lucide-react';
 import { Campaign } from '@/app/interfaces';
-import { CampaignCard } from '@/components/campaign/CampaignCard';
+import { CampaignCard } from '@/components/campaigns/CampaignCard';
 
 // Жишээ ханш
 const ETH_TO_MNT_RATE = 6_000_000;

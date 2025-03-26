@@ -1,16 +1,8 @@
 'use client';
 
+import { Collaborator } from '@/app/interfaces';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-
-/**
- * Төслийн багийн нэг гишүүн Collaborator‐ийн интерфэйс
- */
-interface Collaborator {
-  name: string;
-  position: string;
-  imageUrl: string;
-}
 
 /**
  * TeamCard компонент нь гаднаас collaborators массивыг props болгон авч харуулна.

@@ -4,18 +4,8 @@ import { useState } from 'react';
 import { BrowserProvider, ethers } from 'ethers';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2, Terminal } from 'lucide-react';
 
-import BasicsStep from './steps/BasicsStep';
-import RewardsStep from './steps/RewardsStep';
-import StoryStep from './steps/StoryStep';
-import PeopleStep from './steps/PeopleStep';
-import PaymentStep from './steps/PaymentStep';
-import PromotionStep from './steps/PromotionStep';
-
-import StepIndicator from '@/components/ui/StepIndicator';
+import StepIndicator from '@/components/SharedComponents/StepIndicator';
 import {
   File,
   Gift,
@@ -25,8 +15,18 @@ import {
   Megaphone,
 } from 'lucide-react';
 
-import { FormData } from '@/app/interfaces';
+import BasicsStep from '@/components/campaigns/create/steps/BasicsStep';
+import RewardsStep from '@/components/campaigns/create/steps/RewardsStep';
+import StoryStep from '@/components/campaigns/create/steps/StoryStep';
+import PeopleStep from '@/components/campaigns/create/steps/PeopleStep';
+import PaymentStep from '@/components/campaigns/create/steps/PaymentStep';
+import PromotionStep from '@/components/campaigns/create/steps/PromotionStep';
+
+import type { FormData } from '@/app/interfaces';
 import { getFundraisingContract } from '@/services/fundraisingConfig';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, Loader2, Terminal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const TOTAL_STEPS = 6;
 
@@ -39,87 +39,54 @@ const WizardSteps = [
   { id: 6, title: 'Сурталчилгаа', icon: <Megaphone className='w-4 h-4' /> },
 ];
 
-export default function CreateCampaignWizard() {
+interface Props {
+  campaignId: number;
+  initialFormData: FormData; // contract + IPFS‐ээс авсан өгөгдөл
+}
+
+export default function EditCampaignWizard({
+  campaignId,
+  initialFormData,
+}: Props) {
   const router = useRouter();
 
-  // Жишээ: Wizard буюу үндсэн FormData-гаа эхлээд тодорхойлох
-  const [formData, setFormData] = useState<FormData>({
-    basics: {
-      title: '',
-      description: '',
-      primaryCategory: '',
-      imageUrl: '',
-      videoUrl: '',
-      goal: '',
-      targetLaunchDate: '',
-      latePledges: false,
-      targetEndDate: '',
-    },
-    rewards: {
-      items: [],
-      description: '',
-    },
-    story: {
-      introduceProject: '',
-      storyDetail: '',
-      risks: '',
-      faq: [],
-    },
-    people: {
-      vanityURL: '',
-      demographics: '',
-      collaborators: [],
-    },
-    // ТА энд default утгуудыг тодорхойлно
-    paymentInfo: {
-      fundingCosts: [], // Хоосон массив
-      fundbridgeFee: '',
-      publishingFee: '',
-    },
-    promotion: {
-      marketingPlan: '',
-      socialMedia: '',
-    },
-  });
-
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [currentStep, setCurrentStep] = useState(1);
 
-  // loading, error state
+  // Loading, error
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // formData-г шинэчлэх туслах функц
   function updateFormData(fields: Partial<FormData>) {
     setFormData((prev) => ({ ...prev, ...fields }));
   }
 
-  // Алхам бүрийн validation
+  // Алхам тус бүрд validation хийж болно
   function validateStep(step: number): boolean {
-    // Энд алхам тус бүрийн шалгалт хийж болно
     return true;
   }
 
-  // Дараагийн алхам руу шилжих
   async function handleNext() {
     if (validateStep(currentStep)) {
       setCurrentStep((prev) => prev + 1);
     }
   }
 
-  // Өмнөх алхам руу шилжих
   function prevStep() {
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
     }
   }
 
-  // Дуусгах (createCampaign + IPFS upload)
+  // ------------------------------------------------
+  // Finish -> updateCampaign(...), дараа нь /profile/campaigns рүү
+  // ------------------------------------------------
   async function handleFinish() {
     try {
       setLoading(true);
       setError(null);
 
-      // 1) formData-гаа IPFS рүү upload
+      // 1) formData‐г IPFS рүү update хийж, шинэ CID авна
       const metadataStr = JSON.stringify(formData);
       const res = await fetch('/api/pinataUpload', {
         method: 'POST',
@@ -131,9 +98,8 @@ export default function CreateCampaignWizard() {
         throw new Error(errData.error || 'Failed to upload to IPFS');
       }
       const { cid } = await res.json();
-      console.log('metadataHash (CID) =', cid);
 
-      // 2) Эфиртэй холбогдох
+      // 2) Ердийн updateCampaign дуудаж, title, description, imageUrl, metadataHash солих
       if (!window.ethereum) {
         alert('MetaMask not found!');
         return;
@@ -143,55 +109,24 @@ export default function CreateCampaignWizard() {
       const signer = await provider.getSigner();
       const contract = getFundraisingContract(signer);
 
-      // 1) хэрэглэгчийн оруулсан MNT утгыг авч шалгана
-      const goalMNT = parseInt(formData.basics.goal, 10);
-      if (isNaN(goalMNT) || goalMNT <= 0) {
-        throw new Error(
-          'Санхүүжилтийн дүн (goal) зөвхөн тоо, мөн 0-с их байх ёстой!'
-        );
-      }
+      // formData.basics.title, .description, .imageUrl‐ыг ашиглана
+      const newTitle = formData.basics.title || '';
+      const newDesc = formData.basics.description || '';
+      const newImageUrl = formData.basics.imageUrl || '';
+      const newMetadataHash = cid; // IPFS дээрх шинэ metadata
 
-      // 2) MNT -> ETH
-      // Жишээ ханш: 1 ETH = 6,000,000 MNT
-      const ETH_TO_MNT_RATE = 6_000_000;
-      const goalEth = goalMNT / ETH_TO_MNT_RATE;
-      // Жишээ нь 10,000,000 MNT = ~1.6667 ETH
-
-      // 3) ETH -> Wei
-      const goalWei = ethers.parseEther(goalEth.toString());
-      // parseEther("1.6667") => ~1.6667 * 10^18 wei
-      const title = formData.basics.title || '';
-      if (!title || title.length > 200) {
-        throw new Error(
-          'Гарчиг (title) хоосон байж болохгүй, урт нь 200 тэмдэгтээс хэтрэхгүй!'
-        );
-      }
-
-      const targetEndDateSec = Math.floor(
-        new Date(formData.basics.targetEndDate).getTime() / 1000
-      );
-      if (targetEndDateSec <= Math.floor(Date.now() / 1000)) {
-        throw new Error(
-          'Төслийн дуусах огноо (targetEndDate) одоогийн цагаас хойш байх ёстой!'
-        );
-      }
-
-      // 4) createCampaign дуудлага
-      const tx = await contract.createCampaign(
-        title,
-        formData.basics.primaryCategory,
-        formData.basics.description,
-        goalWei, // wei хэлбэр гэж үзвэл, 10**18-р үржүүлж болно
-        formData.basics.imageUrl,
-        cid, // зөвхөн IPFS CID дамжуулна
-        targetEndDateSec
+      const tx = await contract.updateCampaign(
+        campaignId,
+        newTitle,
+        newDesc,
+        newImageUrl,
+        newMetadataHash
       );
       await tx.wait();
-      <Alert>
-        <Terminal className='h-4 w-4' />
-        <AlertTitle>Кампанит ажил амжилттай үүслээ!</AlertTitle>
-      </Alert>;
-      router.push('/campaigns');
+
+      alert('Кампанит ажлын мэдээлэл амжилттай шинэчлэгдлээ!');
+      // ЭНД /profile/campaigns рүү шилжүүлэх
+      router.push('/profile/campaigns');
     } catch (err: any) {
       console.error(err);
       setError(`Алдаа: ${err.message}`);
@@ -200,7 +135,6 @@ export default function CreateCampaignWizard() {
     }
   }
 
-  // Аль алхам дээр байгаагаас шалтгаалан харуулах компонент
   function renderStep() {
     switch (currentStep) {
       case 1:
@@ -235,7 +169,7 @@ export default function CreateCampaignWizard() {
   return (
     <div className='max-w-3xl mx-auto bg-white p-4 rounded shadow space-y-4 relative'>
       <h1 className='text-2xl font-bold text-gray-800'>
-        Кампанит ажил үүсгэх (Wizard)
+        Кампанит ажил засварлах (ID: {campaignId})
       </h1>
 
       <StepIndicator
@@ -302,7 +236,7 @@ export default function CreateCampaignWizard() {
             disabled={loading}
             className='bg-blue-600'
           >
-            {loading ? 'Үүсгэж байна...' : 'Дуусгах'}
+            {loading ? 'Шинэчилж байна...' : 'Дуусгах'}
           </Button>
         )}
       </div>
@@ -329,7 +263,7 @@ export default function CreateCampaignWizard() {
               <Loader2 className='w-6 h-6 animate-spin text-blue-600' />
               <div>
                 <AlertTitle className='text-blue-600'>
-                  Үүсгэж байна...
+                  Шинэчилж байна...
                 </AlertTitle>
                 <AlertDescription className='text-gray-600'>
                   Та түр хүлээнэ үү

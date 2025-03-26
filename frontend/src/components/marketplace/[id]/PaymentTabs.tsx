@@ -6,11 +6,11 @@ import { ethers, BrowserProvider } from 'ethers';
 
 // Та ашиглах UI компонентийн импортууд
 import { Button } from '@/components/ui/button';
-import { TabButton } from '@/components/ui/TabButton';
-import { FiatForm } from './FiatForm';
-import { CardForm } from './CardForm';
+import { TabButton } from '@/components/SharedComponents/TabButton';
+import { FiatForm } from '@/components/marketplace/[id]/PurchaseForms/FiatForm';
+import CardForm from '@/components/campaigns/[id]/donate/DonateForms/CardForm';
 import { getMarketplaceContract } from '@/services/marketplaceConfig';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 // QPay буюу MNT QR төлбөрийн жишээ
 interface QPayFormData {

@@ -1,6 +1,6 @@
 // /app/campaigns/create/interfaces/RewardsData.ts
 
-import { Item } from './Item';
+import { Item } from './RewardItem';
 
 /**
  * RewardsData – Reward-уудын жагсаалт, тайлбар.

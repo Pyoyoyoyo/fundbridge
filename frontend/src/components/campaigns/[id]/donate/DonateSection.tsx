@@ -4,25 +4,24 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BrowserProvider, ethers } from 'ethers';
 import { Button } from '@/components/ui/button';
-import { TabButton } from '@/components/ui/TabButton';
+import { TabButton } from '@/components/SharedComponents/TabButton';
 import { getFundraisingContract } from '@/services/fundraisingConfig';
+import { useRouter } from 'next/navigation';
 
+// QPay‐тэй холбогдох төлбөрийн талбарууд
 interface QPayFormData {
-  phone: string;
+  phone: string; // хэрэглэгчийн утас
   amountMnt: string;
 }
 
-export default function PurchaseSection({
-  campaignId,
-}: {
-  campaignId: number;
-}) {
+export default function DonateSection({ campaignId }: { campaignId: number }) {
+  const router = useRouter();
   const [activeMethod, setActiveMethod] = useState<
     'fiat' | 'eth' | 'card' | 'qpay'
   >('eth');
   const [donating, setDonating] = useState(false);
 
-  // QPay
+  // ------------------- QPay -------------------
   const [qpayData, setQpayData] = useState<QPayFormData>({
     phone: '',
     amountMnt: '',
@@ -45,6 +44,7 @@ export default function PurchaseSection({
       }
       const data = await res.json();
       alert(`QPay invoice үүслээ. QR code: ${data.qrImageUrl}`);
+      // QPay app дээр төлбөр хийсний дараа, webhook/poll ашиглан donate(...) дуудна.
     } catch (err: any) {
       alert('QPay payment error: ' + err.message);
     } finally {
@@ -52,7 +52,7 @@ export default function PurchaseSection({
     }
   }
 
-  // FIAT
+  // ------------------- FIAT -------------------
   const [fiatAmountMnt, setFiatAmountMnt] = useState('');
   async function handleDonateFiat() {
     try {
@@ -67,6 +67,9 @@ export default function PurchaseSection({
         throw new Error(errData.error || 'FIAT payment failed');
       }
       alert(`FIAT төлбөр амжилттай. Дүн: ${fiatAmountMnt} MNT`);
+
+      // Төлбөр амжилттай болсон гэж үзвэл FundraisingContract => donate(...) дуудаж болно
+      // (msg.value=0, comment="Paid by bank" гэх мэт)
     } catch (err: any) {
       alert('FIAT payment error: ' + err.message);
     } finally {
@@ -74,14 +77,17 @@ export default function PurchaseSection({
     }
   }
 
-  // CARD
+  // ------------------- CARD -------------------
   const [cardNumber, setCardNumber] = useState('');
   const [cardHolder, setCardHolder] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   async function handleDonateCard() {
     try {
       setDonating(true);
+      // 1) Энд Stripe‐ийн PaymentIntent‐ийг create => confirm => амжилттай бол
+      // 2) FundraisingContract => donate(...) (msg.value=0, comment="Paid by card")
       alert(`Картаар төлбөр илгээх (fake demo). Number: ${cardNumber}`);
+      // ...
     } catch (err: any) {
       alert('Card payment error: ' + err.message);
     } finally {
@@ -89,7 +95,7 @@ export default function PurchaseSection({
     }
   }
 
-  // ETH
+  // ------------------- ETH -------------------
   const [amountEth, setAmountEth] = useState('');
   const [comment, setComment] = useState('');
   async function handleEthDonate() {
@@ -103,12 +109,17 @@ export default function PurchaseSection({
       await provider.send('eth_requestAccounts', []);
       const signer = await provider.getSigner();
       const contract = getFundraisingContract(signer);
+
+      // parse Ether string -> wei
       const donationWei = ethers.parseEther(amountEth || '0');
+
+      // donate(_campaignId, _comment) payable
       const tx = await contract.donate(campaignId, comment, {
         value: donationWei,
       });
       await tx.wait();
       alert('ETH donate амжилттай!');
+      router.push(`/campaigns/${campaignId}`);
     } catch (err: any) {
       alert('ETH donate error: ' + err.message);
     } finally {
@@ -116,11 +127,12 @@ export default function PurchaseSection({
     }
   }
 
+  // ------------------- Tab Render -------------------
   function renderTabContent() {
     switch (activeMethod) {
       case 'fiat':
         return (
-          <div className='p-4 border bg-white border-gray-200 rounded space-y-2'>
+          <div className='p-4 border border-gray-200 rounded space-y-2'>
             <label className='text-sm text-gray-600'>Хандивын дүн (MNT)</label>
             <input
               type='number'
@@ -143,7 +155,7 @@ export default function PurchaseSection({
         );
       case 'card':
         return (
-          <div className='p-4 bg-white border border-gray-200 rounded space-y-2'>
+          <div className='p-4 border border-gray-200 rounded space-y-2'>
             <label className='text-sm text-gray-600'>Картын дугаар</label>
             <input
               type='text'
@@ -221,7 +233,7 @@ export default function PurchaseSection({
       case 'eth':
       default:
         return (
-          <div className='bg-white space-y-4 p-4 border border-gray-200 rounded'>
+          <div className='space-y-4 p-4 border border-gray-200 rounded'>
             <div>
               <label className='text-sm font-medium text-gray-600'>
                 ETH дүн
@@ -269,6 +281,7 @@ export default function PurchaseSection({
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.3 }}
     >
+      {/* Tab сонголтууд */}
       <div className='flex gap-2'>
         <TabButton
           label='Fiat'

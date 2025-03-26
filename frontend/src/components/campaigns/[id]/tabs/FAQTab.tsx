@@ -2,11 +2,7 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-
-interface FaqItem {
-  question: string;
-  answer: string;
-}
+import { FaqItem } from '@/app/interfaces';
 
 interface Metadata {
   story?: {

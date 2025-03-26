@@ -3,7 +3,7 @@
 /**
  * Rewards-т багтах нэг Item
  */
-export interface Item {
+export interface RewardItem {
   name: string;
   description: string;
   image: string;

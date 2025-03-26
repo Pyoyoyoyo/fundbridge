@@ -8,7 +8,7 @@ export * from './payment/PaymentCostItem';
 export * from './payment/ReportItem';
 export * from './payment/PaymentData';
 export * from './promotion/PromotionData';
-export * from './rewards/Item';
+export * from './rewards/RewardItem';
 export * from './rewards/RewardsData';
 export * from './basics/BasicsData';
 export * from './FormData';

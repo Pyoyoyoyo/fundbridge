@@ -1,6 +1,6 @@
 'use client';
 
-import Logo from '@/components/ui/Logo';
+import Logo from '@/components/SharedComponents/Logo';
 
 export default function Footer() {
   return (

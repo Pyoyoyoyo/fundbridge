@@ -1,10 +1,7 @@
 'use client';
 
-interface RewardItem {
-  name: string;
-  description: string;
-  image?: string;
-}
+import { RewardItem } from '@/app/interfaces';
+
 interface Metadata {
   rewards?: {
     items?: RewardItem[];

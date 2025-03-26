@@ -8,7 +8,7 @@ async function main() {
 
   // 2) Deploy хийх
   const fundraisingContractAddress =
-    '0x9242b82c9F7eE2aAB8f1aA9eB4B089a0FBFbc3Ce';
+    '0x833a49B99acA780e601D5D249509dc681Af4a510';
   const marketplace = await MarketplaceFactory.deploy(
     fundraisingContractAddress
   );

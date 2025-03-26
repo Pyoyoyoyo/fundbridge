@@ -1,4 +1,4 @@
-import CreateCampaignWizard from '@/components/campaign/create/CreateCampaignWizard';
+import CreateCampaignWizard from '@/components/campaigns/create/CreateCampaignWizard';
 
 export default function CreateCampaignPage() {
   return <CreateCampaignWizard />;

@@ -1,7 +1,7 @@
 import './globals.css';
-import Header from '../components/ui/Header';
+import Header from '@/components/SharedComponents/Header';
 import { Metadata } from 'next';
-import Providers from '../providers/providers';
+import Providers from '@/providers/providers';
 
 export const metadata: Metadata = {
   title: 'FundBridge',

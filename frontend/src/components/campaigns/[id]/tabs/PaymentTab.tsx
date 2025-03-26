@@ -1,5 +1,5 @@
 'use client';
-import { PaymentCostItem, ReportItem, PaymentData } from '@/app/interfaces';
+import { PaymentData } from '@/app/interfaces';
 
 // Backend-аас ирэх
 interface Metadata {

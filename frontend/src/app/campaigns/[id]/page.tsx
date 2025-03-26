@@ -10,22 +10,22 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import DonateButton from '@/components/ui/DonateButton';
+import DonateButton from '@/components/SharedComponents/DonateButton';
 
 // Tab Components
-import DetailTab from '@/components/campaign/[id]/tabs/DetailTab';
-import RisksTab from '@/components/campaign/[id]/tabs/RisksTab';
-import FAQTab from '@/components/campaign/[id]/tabs/FAQTab';
-import PeopleTab from '@/components/campaign/[id]/tabs/PeopleTab';
-import RewardsTab from '@/components/campaign/[id]/tabs/RewardsTab';
-import PaymentTab from '@/components/campaign/[id]/tabs/PaymentTab';
+import DetailTab from '@/components/campaigns/[id]/tabs/DetailTab';
+import RisksTab from '@/components/campaigns/[id]/tabs/RisksTab';
+import FAQTab from '@/components/campaigns/[id]/tabs/FAQTab';
+import PeopleTab from '@/components/campaigns/[id]/tabs/PeopleTab';
+import RewardsTab from '@/components/campaigns/[id]/tabs/RewardsTab';
+import PaymentTab from '@/components/campaigns/[id]/tabs/PaymentTab';
 
 // Жишээ: Төслийн баг, эзэмшигчийн мэдээлэл харуулах жижиг компонент
-import TeamCard from '@/components/campaign/[id]/tabs/TeamCard';
-import { TabButton } from '@/components/ui/TabButton';
+import TeamCard from '@/components/campaigns/[id]/tabs/TeamCard';
+import { TabButton } from '@/components/SharedComponents/TabButton';
 import { Info, ParkingCircle } from 'lucide-react';
-import WarningBoxes from '@/components/campaign/[id]/tabs/WarningBoxes';
-import CommentsTab from '@/components/campaign/[id]/tabs/CommentsTab';
+import WarningBoxes from '@/components/campaigns/[id]/tabs/WarningBoxes';
+import CommentsTab from '@/components/campaigns/[id]/tabs/CommentsTab';
 import { Campaign } from '@/app/interfaces';
 
 const ETH_TO_MNT_RATE = 6_000_000;

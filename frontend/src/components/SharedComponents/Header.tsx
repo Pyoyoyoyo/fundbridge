@@ -4,10 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import Logo from './Logo';
-// NextAuth
 import { useSession, signOut } from 'next-auth/react';
-import { profile } from 'console';
+import { Skeleton } from '@/components/ui/skeleton';
+import Logo from './Logo';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -15,6 +14,8 @@ export default function Header() {
   const { data: session, status } = useSession();
   const isLoading = status === 'loading';
 
+  // Гол navigation линкүүд
+  // (Profile, My Campaigns, Selling Items‐ийг dropdown руу оруулна => эндээс хасна)
   const links = [
     { href: '/', label: 'Home' },
     { href: '/campaigns', label: 'Campaigns' },
@@ -30,7 +31,7 @@ export default function Header() {
   return (
     <header className='bg-white shadow px-4 py-3'>
       <div className='container mx-auto flex h-16 items-center justify-between'>
-        {/* Left: Brand Logo + Name */}
+        {/* ------ Left: Brand Logo + Name ------ */}
         <div className='flex items-center space-x-2'>
           <Logo />
           <Link href='/' className='text-xl font-semibold text-gray-800'>
@@ -38,7 +39,7 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Right side: Desktop nav (md:flex), includes login/logout logic */}
+        {/* ------ Right side: Desktop nav ------ */}
         <div className='hidden md:flex items-center space-x-4'>
           {/* Үндсэн link-үүд */}
           {links.map((link) => {
@@ -60,12 +61,12 @@ export default function Header() {
 
           {/* Нэвтрэлтийн төлөв */}
           {isLoading ? (
-            <span className='text-gray-500'>Loading...</span>
+            <Skeleton className='h-5 w-16 rounded bg-gray-300' />
           ) : session?.user ? (
-            // Logged in -> Profile image + Logout
+            // Logged in => Dropdown‐той ProfileMenu
             <ProfileMenu user={session.user} onLogout={handleLogout} />
           ) : (
-            // Not logged in -> Login button
+            // Not logged in => Login button
             <Link
               href='/login'
               className='rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-500'
@@ -75,7 +76,7 @@ export default function Header() {
           )}
         </div>
 
-        {/* Mobile menu button (hamburger / close) */}
+        {/* ------ Mobile menu button (hamburger / close) ------ */}
         <button
           className='md:hidden inline-flex items-center justify-center rounded p-2 text-gray-700 hover:bg-gray-100 focus:outline-none'
           onClick={toggleMenu}
@@ -84,7 +85,7 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Mobile dropdown menu (only if menuOpen) */}
+      {/* ------ Mobile dropdown menu (only if menuOpen) ------ */}
       {menuOpen && (
         <div className='md:hidden border-t bg-white px-4 py-2 shadow'>
           <nav className='flex flex-col space-y-1'>
@@ -108,7 +109,7 @@ export default function Header() {
 
             {/* Nэвтрэлтийн төлөв (mobile) */}
             {isLoading ? (
-              <span className='text-gray-500 px-3 py-2'>Loading...</span>
+              <Skeleton className='h-5 w-16 rounded bg-gray-300' />
             ) : session?.user ? (
               <ProfileMenuMobile
                 user={session.user}
@@ -133,7 +134,9 @@ export default function Header() {
   );
 }
 
-// ProfileMenu for Desktop
+/** ProfileMenu (Desktop) - Avatar дээр дарж dropdown гарна.
+ *  Энд Profile, My Campaigns, Selling Items, Logout гэсэн 4 сонголт байршуулна.
+ */
 function ProfileMenu({ user, onLogout }: { user: any; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
 
@@ -142,7 +145,7 @@ function ProfileMenu({ user, onLogout }: { user: any; onLogout: () => void }) {
   }
 
   return (
-    <div className='relative'>
+    <div className='relative z-50'>
       <img
         src={user.image || '/default-avatar.png'}
         alt='profile'
@@ -150,7 +153,8 @@ function ProfileMenu({ user, onLogout }: { user: any; onLogout: () => void }) {
         onClick={toggle}
       />
       {open && (
-        <div className='absolute right-0 mt-2 w-40 bg-white border rounded shadow-md'>
+        <div className='absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-50'>
+          {/* Profile */}
           <Link
             href='/profile'
             className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
@@ -158,6 +162,26 @@ function ProfileMenu({ user, onLogout }: { user: any; onLogout: () => void }) {
           >
             Profile
           </Link>
+
+          {/* My Campaigns */}
+          <Link
+            href='/profile/campaigns'
+            className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
+            onClick={() => setOpen(false)}
+          >
+            My Campaigns
+          </Link>
+
+          {/* Selling Items */}
+          <Link
+            href='/profile/items'
+            className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
+            onClick={() => setOpen(false)}
+          >
+            Selling Items
+          </Link>
+
+          {/* Logout */}
           <button
             onClick={() => {
               onLogout();
@@ -173,7 +197,10 @@ function ProfileMenu({ user, onLogout }: { user: any; onLogout: () => void }) {
   );
 }
 
-// ProfileMenu for Mobile
+/** ProfileMenuMobile (Mobile) - Mobile цэсэнд
+ * Profile, My Campaigns, Selling Items, Logout
+ * жагсаалтаар харуулна.
+ */
 function ProfileMenuMobile({
   user,
   onLogout,
@@ -183,6 +210,7 @@ function ProfileMenuMobile({
 }) {
   return (
     <div className='flex flex-col space-y-1 mt-2'>
+      {/* Avatar + name */}
       <div className='flex items-center space-x-2 px-3 py-2'>
         <img
           src={user.image || '/default-avatar.png'}
@@ -191,12 +219,32 @@ function ProfileMenuMobile({
         />
         <span className='text-gray-800 font-medium'>{user.name || 'User'}</span>
       </div>
+
+      {/* Profile */}
       <Link
         href='/profile'
         className='block rounded px-3 py-2 text-gray-700 hover:bg-gray-100'
       >
         Profile
       </Link>
+
+      {/* My Campaigns */}
+      <Link
+        href='/profile/campaigns'
+        className='block rounded px-3 py-2 text-gray-700 hover:bg-gray-100'
+      >
+        My Campaigns
+      </Link>
+
+      {/* Selling Items */}
+      <Link
+        href='/profile/items'
+        className='block rounded px-3 py-2 text-gray-700 hover:bg-gray-100'
+      >
+        Selling Items
+      </Link>
+
+      {/* Logout */}
       <button
         onClick={onLogout}
         className='text-left block rounded px-3 py-2 text-gray-700 hover:bg-gray-100'

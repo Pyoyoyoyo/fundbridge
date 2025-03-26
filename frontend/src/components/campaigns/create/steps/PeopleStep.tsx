@@ -17,20 +17,7 @@ import {
 } from 'lucide-react';
 
 import peopleIllustration from '@img/campaign/people-illustration.svg';
-
-// Та өөрийн interface-уудыг энд импортлоно:
-// (Жишээ кодон дээр, Collaborator-д name, position, imageUrl талбарууд байна.)
-interface Collaborator {
-  name: string;
-  position: string;
-  imageUrl: string;
-}
-
-export interface PeopleData {
-  vanityURL: string;
-  demographics: string;
-  collaborators: Collaborator[];
-}
+import { Collaborator, PeopleData } from '@/app/interfaces';
 
 interface PeopleStepProps {
   formData: {

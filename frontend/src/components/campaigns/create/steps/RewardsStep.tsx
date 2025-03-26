@@ -11,17 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 import rewardsIllustration from '@img/campaign/rewards-illustration.svg';
-
-interface Item {
-  name: string;
-  description: string;
-  image: string; // IPFS link
-}
+import { RewardItem } from '@/app/interfaces';
 
 interface RewardsStepProps {
   formData: {
     rewards: {
-      items: Item[];
+      items: RewardItem[];
       description: string;
     };
   };
@@ -35,7 +30,7 @@ export default function RewardsStep({
   const rewards = formData.rewards;
   const items = rewards.items ?? [];
 
-  const [newItem, setNewItem] = useState<Item>({
+  const [newItem, setNewItem] = useState<RewardItem>({
     name: '',
     description: '',
     image: '',

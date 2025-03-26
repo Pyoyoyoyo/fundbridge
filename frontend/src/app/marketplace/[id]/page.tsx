@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, ImageIcon, BookOpen } from 'lucide-react';
 
 // Таны төлбөрийн табуудын компонент (доорх PaymentTabs жишээ)
-import PaymentTabs from '@/components/marketplace/PaymentTabs';
+import PaymentTabs from '@/components/marketplace/[id]/PaymentTabs';
 import { ItemMetadata, MarketplaceItem } from '@/app/interfaces';
 
 const ETH_TO_MNT_RATE = 6_000_000;

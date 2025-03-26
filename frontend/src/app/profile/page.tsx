@@ -1,39 +1,65 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { BrowserProvider, ethers } from 'ethers';
-import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
+/**
+ * Хэрэглэгчийн session мэдээллийг харуулах жишээ.
+ */
 export default function ProfilePage() {
-  const { data: session } = useSession();
-  const [loading, setLoading] = useState(false);
-  const [registered, setRegistered] = useState<boolean | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  if (!session?.user) {
-    return <p>Та нэвтэрч орно уу.</p>;
+  useEffect(() => {
+    // Хэрэглэгч нэвтрээгүй бол login руу чиглүүлэх жишээ
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  if (status === 'loading') {
+    return (
+      <div className='p-4'>
+        <Skeleton className='h-8 w-1/2 mb-2' />
+        <Skeleton className='h-6 w-1/3' />
+      </div>
+    );
   }
 
-  return (
-    <div className='max-w-md mx-auto p-4'>
-      <h1 className='text-2xl font-bold mb-4'>Таны профайл</h1>
-      {error && <p className='text-red-500'>{error}</p>}
+  if (!session?.user) {
+    return <p className='p-4 text-red-500'>User not found or not logged in.</p>;
+  }
 
-      {loading ? (
-        <p>PoH‐д бүртгэлтэй эсэхийг шалгаж байна...</p>
-      ) : registered === null ? (
-        <p>MetaMask байхгүй эсвэл session алга.</p>
-      ) : registered ? (
-        <p className='text-green-600'>Та PoH дээр бүртгэлтэй байна!</p>
-      ) : (
+  // session.user дотор name, email, image гэх мэт талбарууд байдаг (NextAuth)
+  const { user } = session;
+
+  return (
+    <div className='max-w-2xl mx-auto p-4 space-y-4'>
+      <h1 className='text-2xl font-bold text-gray-800'>Profile</h1>
+      <div className='flex items-center gap-4'>
+        <img
+          src={user.image || '/default-avatar.png'}
+          alt='Avatar'
+          className='w-16 h-16 rounded-full object-cover'
+        />
         <div>
-          <p className='text-yellow-600 mb-2'>
-            Та PoH дээр бүртгэлгүй байна. “Verify with PoH” товчийг дарж албан
-            ёсны сайт руу ороод бүртгүүлнэ үү.
+          <p className='text-lg font-semibold text-gray-700'>
+            {user.name || 'No name'}
           </p>
+          <p className='text-sm text-gray-600'>{user.email}</p>
         </div>
-      )}
+      </div>
+
+      <p className='text-gray-600 mt-4'>
+        Та өөрийн мэдээллийг энд харах буюу өөрчилж болно.
+      </p>
+
+      {/* Жишээ: Profile‐ээ засах товч */}
+      <button className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500'>
+        Edit Profile
+      </button>
     </div>
   );
 }

@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import DonateButton from '@/components/ui/DonateButton';
-import { Campaign } from '../../app/interfaces/campaign/campaignData';
+import DonateButton from '@/components/SharedComponents/DonateButton';
+import { Campaign } from '@/app/interfaces/campaign/campaignData';
 // ----------------- CampaignCard -----------------
 export function CampaignCard({
   campaign,

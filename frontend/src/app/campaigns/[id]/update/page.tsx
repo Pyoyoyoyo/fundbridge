@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import DonateButton from '@/components/ui/DonateButton';
+import DonateButton from '@/components/SharedComponents/DonateButton';
 
 // 1 ETH ~ 6,000,000 MNT
 const ETH_TO_MNT_RATE = 6000000;
