@@ -1,5 +1,6 @@
 'use client';
 
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -9,9 +10,7 @@ export default function KycSuccessPage() {
   useEffect(() => {
     async function markVerified() {
       try {
-        await fetch('/api/kyc/mark-verified', {
-          method: 'POST',
-        });
+        await fetch('/api/kyc/mark-verified', { method: 'POST' });
       } catch (err) {
         console.error(
           'KYC баталгаажсан хэрэглэгчийг хадгалахад алдаа гарлаа:',
@@ -20,11 +19,12 @@ export default function KycSuccessPage() {
       }
     }
 
-    markVerified(); // 🔹 DB-д KYC verified = true болгоно
+    markVerified();
 
     const timer = setTimeout(() => {
       router.push('/campaigns/create');
     }, 3000);
+
     return () => clearTimeout(timer);
   }, [router]);
 

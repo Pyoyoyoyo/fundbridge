@@ -24,30 +24,40 @@ export default function KycGate() {
       setLoading(true);
       setError(null);
 
-      // Хэрэглэгчийн ID-г session эсвэл localStorage-аас аваарай.
-      // Энэ жишээн дээр 'userId' утгыг localStorage-аас авч байгаа ба хэрэв олдоогүй бол "defaultUserId" гэж тохируулна.
-      const userId = window.localStorage.getItem('userId') || 'defaultUserId';
+      const sessionRes = await fetch('/api/auth/session');
+      const sessionData = await sessionRes.json();
 
-      // API endpoint-д POST хүсэлт илгээж, KYC verification session үүсгэнэ.
+      if (!sessionData?.user?.email) {
+        throw new Error('Нэвтэрсэн хэрэглэгч олдсонгүй.');
+      }
+
+      // 🔍 1. OTP баталгаажсан эсэхийг шалгах
+      const otpRes = await fetch('/api/kyc/check-otp-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: sessionData.user.email }),
+      });
+
+      const otpData = await otpRes.json();
+
+      if (!otpData.verified) {
+        // ✅ Баталгаажаагүй бол OTP хуудас руу шилжүүлнэ
+        router.push('/kyc/otp');
+        return;
+      }
+
+      // ✅ 2. Stripe identity session үүсгэх
       const res = await fetch('/api/kyc/create-verification-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId: sessionData.user.id }),
       });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(
-          errData.error || 'Failed to create verification session'
-        );
-      }
-
       const data = await res.json();
-      if (!data.hostedUrl) {
-        throw new Error('No hostedUrl returned from server');
+      if (!res.ok || !data.hostedUrl) {
+        throw new Error(data.error || 'KYC session үүсгэхэд алдаа гарлаа.');
       }
 
-      // Хэрэглэгчийг KYC үйл явцыг эхлэх хуудас руу (жишээ нь, Stripe Identity эсвэл өөр KYC провайдерийн хуудас) redirect хийнэ.
       window.location.href = data.hostedUrl;
     } catch (err: any) {
       console.error(err);

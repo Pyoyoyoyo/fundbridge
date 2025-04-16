@@ -2,10 +2,22 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import Link from 'next/link';
 import heroImage from '@img/home/hero-image.jpg';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 export default function Hero() {
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  function handleStartCampaign() {
+    if (!session?.user?.kycVerified) {
+      router.push('/kyc'); // ⛔️ Баталгаажаагүй бол KYC рүү
+    } else {
+      router.push('/campaigns/create'); // ✅ Баталгаажсан бол campaign эхлүүлэх рүү
+    }
+  }
+
   return (
     <section className='relative overflow-hidden bg-gradient-to-b from-blue-50 to-white p-5'>
       <div className='container mx-auto flex flex-col-reverse items-center gap-8 px-4 py-16 md:flex-row md:py-24'>
@@ -30,27 +42,25 @@ export default function Hero() {
             оруулалт авах боломжтой.
           </p>
           <div className='mt-6 flex flex-wrap gap-4'>
-            {/* Эхлүүлэх товч → campaigns/create руу шилжих */}
-            <Link href='/campaigns/create'>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className='rounded bg-blue-600 px-6 py-3 text-white hover:bg-blue-500'
-              >
-                Төслөө эхлүүлэх
-              </motion.button>
-            </Link>
+            {/* ✅ KYC шалгалттай товч */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className='rounded bg-blue-600 px-6 py-3 text-white hover:bg-blue-500'
+              onClick={handleStartCampaign}
+            >
+              Төслөө эхлүүлэх
+            </motion.button>
 
-            {/* Хөрөнгө оруулагчид товч → campaigns эсвэл marketplace руу шилжих */}
-            <Link href='/marketplace'>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className='rounded border border-blue-600 px-6 py-3 text-blue-600 hover:bg-blue-50'
-              >
-                Хөрөнгө оруулах
-              </motion.button>
-            </Link>
+            {/* Marketplace товч */}
+            <motion.a
+              href='/marketplace'
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className='rounded border border-blue-600 px-6 py-3 text-blue-600 hover:bg-blue-50'
+            >
+              Хөрөнгө оруулах
+            </motion.a>
           </div>
         </motion.div>
 

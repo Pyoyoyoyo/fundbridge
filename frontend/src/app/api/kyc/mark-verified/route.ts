@@ -1,30 +1,33 @@
-// src/app/api/kyc/mark-verified/route.ts
+import { NextRequest } from 'next/server';
+import dbConnect from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/authOptions';
 import User from '@/models/User';
-import dbConnect from '@/lib/db';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   await dbConnect();
-
   const session = await getServerSession(authOptions);
-  if (!session || !session.user?.email) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+
+  if (!session?.user?.email) {
+    return new Response(JSON.stringify({ error: 'Session байхгүй байна' }), {
       status: 401,
     });
   }
 
-  const user = await User.findOneAndUpdate(
+  const updated = await User.findOneAndUpdate(
     { email: session.user.email },
     { kycVerified: true },
-    { new: true, upsert: true } // Хэрвээ олдохгүй бол шинээр үүсгэнэ
+    { new: true }
   );
 
+  if (!updated?.kycOtpVerified) {
+    return new Response(JSON.stringify({ error: 'OTP баталгаажаагүй байна' }), {
+      status: 403,
+    });
+  }
+
   return new Response(
-    JSON.stringify({ message: 'User marked as verified', user }),
-    {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    }
+    JSON.stringify({ message: 'KYC амжилттай бүртгэгдлээ' }),
+    { status: 200 }
   );
 }

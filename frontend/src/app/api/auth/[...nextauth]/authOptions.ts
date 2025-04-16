@@ -1,4 +1,3 @@
-// ✅ app/api/auth/[...nextauth]/authOptions.ts
 import { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
@@ -20,24 +19,25 @@ export const authOptions: AuthOptions = {
 
         console.log('🧪 authorize → credentials:', credentials);
 
-        const user = await User.findOne({ email: credentials?.email });
-        if (!user) {
+        const dbUser = await User.findOne({ email: credentials?.email });
+        if (!dbUser) {
           console.log('❌ хэрэглэгч олдсонгүй');
           return null;
         }
 
-        console.log('✅ хэрэглэгч олдлоо:', user);
+        console.log('✅ хэрэглэгч олдлоо:', dbUser);
 
-        const isValid = await compare(credentials!.password, user.password);
+        const isValid = await compare(credentials!.password, dbUser.password);
         console.log('🔍 Нууц үг таарав уу?', isValid);
 
         if (!isValid) return null;
 
         return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          kycVerified: user.kycVerified,
+          id: dbUser._id.toString(), // 🛠 `dbUser` дээр _id байгаа
+          name: dbUser.name,
+          email: dbUser.email,
+          kycVerified: dbUser.kycVerified,
+          kycOtpVerified: dbUser.kycOtpVerified ?? false, // Ensure kycOtpVerified is included
         };
       },
     }),
@@ -53,21 +53,25 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.user = {
-          ...user,
-          kycVerified: user.kycVerified ?? false,
+          id: (user as any).id, // ← TypeScript-д алдаа өгөхгүйн тулд any
+          email: user.email,
+          name: user.name,
+          kycVerified: (user as any).kycVerified ?? false,
         };
       }
       return token;
     },
+
     async session({ session, token }) {
-      if (token.user && session.user?.email) {
-        await dbConnect();
-        const dbUser = await User.findOne({ email: session.user.email });
-        session.user = {
-          ...session.user,
-          kycVerified: dbUser?.kycVerified ?? false,
-        };
+      if (token.user && session.user) {
+        session.user.id = (token.user as any).id;
+        session.user.kycVerified = (token.user as any).kycVerified ?? false;
       }
+      // 🔁 Хэрэглэгчийн KYC статусыг DB-с дахин шалгах
+      await dbConnect();
+      const dbUser = await User.findOne({ _id: (token.user as any).id });
+      session.user.kycVerified = dbUser?.kycVerified ?? false;
+      session.user.kycOtpVerified = dbUser?.kycOtpVerified ?? false;
       return session;
     },
   },

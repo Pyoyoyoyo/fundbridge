@@ -6,6 +6,7 @@ declare module 'next-auth' {
       id: string;
       name: string; // Үнэн (non-nullable)
       email: string;
+      kycOtpVerified: boolean;
       kycVerified: boolean; // Үнэн буюу boolean утга байх ёстой
       image?: string | null;
     };
@@ -15,6 +16,7 @@ declare module 'next-auth' {
     id: string;
     name: string; // Үнэн (non-nullable)
     email: string;
+    kycOtpVerified: boolean;
     kycVerified: boolean;
   }
 }
