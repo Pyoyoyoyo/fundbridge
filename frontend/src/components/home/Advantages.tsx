@@ -51,7 +51,7 @@ export default function Advantages() {
   ];
 
   return (
-    <section className='container mx-auto px-4 py-12'>
+    <section className='container mx-auto px-10 py-12'>
       <motion.h2
         className='mb-6 text-2xl font-semibold text-gray-800 sm:text-3xl'
         initial={{ opacity: 0, y: -20 }}

@@ -35,10 +35,10 @@ export default function SocialProofSection() {
   const totalInvestmentMnt = Math.floor(totalInvestmentEth * 6_000_000);
 
   return (
-    <section className='py-12 bg-white'>
+    <section className='py-12 bg-white px-10'>
       <div className='container mx-auto px-4'>
         <motion.h2
-          className='mb-6 text-2xl font-semibold text-gray-800 sm:text-3xl'
+          className='mb-6 text-2xl font-semibold text-gray-800 sm:text-3xl text-center'
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}

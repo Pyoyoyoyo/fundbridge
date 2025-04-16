@@ -26,7 +26,7 @@ export default function Testimonials() {
 
   return (
     <section className='bg-white'>
-      <div className='container mx-auto px-4 py-12'>
+      <div className='container mx-auto py-12 px-10'>
         <motion.h2
           className='mb-6 text-2xl font-semibold text-gray-800 sm:text-3xl'
           initial={{ opacity: 0, y: -20 }}

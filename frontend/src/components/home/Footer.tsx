@@ -1,13 +1,12 @@
 'use client';
-
-import Logo from '@/components/SharedComponents/Logo';
+import LogoWhite from '@/components/SharedComponents/LogoWhite';
 
 export default function Footer() {
   return (
     <footer className='bg-gray-900 text-gray-200'>
       <div className='container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-6 md:flex-row'>
         <div className='flex items-center space-x-2'>
-          <Logo />
+          <LogoWhite />
           <span className='font-semibold'>FundBridge</span>
         </div>
         <p className='text-sm'>

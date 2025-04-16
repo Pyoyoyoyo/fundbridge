@@ -4,16 +4,14 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { BadgeCheck, ShieldX } from 'lucide-react';
 
-/**
- * Хэрэглэгчийн session мэдээллийг харуулах жишээ.
- */
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    // Хэрэглэгч нэвтрээгүй бол login руу чиглүүлэх жишээ
     if (status === 'unauthenticated') {
       router.push('/login');
     }
@@ -32,34 +30,59 @@ export default function ProfilePage() {
     return <p className='p-4 text-red-500'>User not found or not logged in.</p>;
   }
 
-  // session.user дотор name, email, image гэх мэт талбарууд байдаг (NextAuth)
   const { user } = session;
 
   return (
-    <div className='max-w-2xl mx-auto p-4 space-y-4'>
-      <h1 className='text-2xl font-bold text-gray-800'>Profile</h1>
-      <div className='flex items-center gap-4'>
+    <div className='max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg'>
+      <div className='flex items-center gap-4 mb-6'>
         <img
           src={user.image || '/default-avatar.png'}
           alt='Avatar'
-          className='w-16 h-16 rounded-full object-cover'
+          className='w-20 h-20 rounded-full object-cover border border-gray-200'
         />
         <div>
-          <p className='text-lg font-semibold text-gray-700'>
-            {user.name || 'No name'}
-          </p>
-          <p className='text-sm text-gray-600'>{user.email}</p>
+          <h1 className='text-2xl font-bold text-gray-800'>{user.name}</h1>
+          <p className='text-gray-600'>{user.email}</p>
+
+          {/* ✅ KYC статус */}
+          <div className='mt-2'>
+            {user.kycVerified ? (
+              <div className='flex items-center gap-1 text-green-600 font-semibold'>
+                <BadgeCheck className='w-4 h-4' />
+                KYC баталгаажсан
+              </div>
+            ) : (
+              <div className='flex items-center gap-1 text-yellow-600 font-semibold'>
+                <ShieldX className='w-4 h-4' />
+                KYC баталгаажаагүй
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <p className='text-gray-600 mt-4'>
-        Та өөрийн мэдээллийг энд харах буюу өөрчилж болно.
+      <p className='text-gray-700 mb-6'>
+        Та өөрийн мэдээллийг шалгах, засварлах, эсвэл KYC баталгаажуулалт хийх
+        боломжтой.
       </p>
 
-      {/* Жишээ: Profile‐ээ засах товч */}
-      <button className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500'>
-        Edit Profile
-      </button>
+      <div className='flex gap-3'>
+        <Button
+          className='bg-blue-600 hover:bg-blue-500 text-white'
+          onClick={() => router.push('/profile/edit')}
+        >
+          Profile засах
+        </Button>
+
+        {!user.kycVerified && (
+          <Button
+            className='bg-yellow-500 hover:bg-yellow-400 text-white'
+            onClick={() => router.push('/kyc')}
+          >
+            KYC баталгаажуулах
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

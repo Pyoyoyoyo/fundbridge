@@ -7,7 +7,7 @@ import heroImage from '@img/home/hero-image.jpg';
 
 export default function Hero() {
   return (
-    <section className='relative overflow-hidden bg-gradient-to-b from-blue-50 to-white'>
+    <section className='relative overflow-hidden bg-gradient-to-b from-blue-50 to-white p-5'>
       <div className='container mx-auto flex flex-col-reverse items-center gap-8 px-4 py-16 md:flex-row md:py-24'>
         {/* Зүүн талд: Текст */}
         <motion.div

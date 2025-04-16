@@ -1,34 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { ethers } from 'ethers';
-import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import { BrowserProvider, ethers } from 'ethers';
 import { useRouter } from 'next/navigation';
-
-import { getFundraisingContract } from '@/services/fundraisingConfig';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Search, Filter, XCircle } from 'lucide-react';
-import { Campaign } from '@/app/interfaces';
+import { Campaign } from '@/app/interfaces/campaign/campaignData';
 import { CampaignCard } from '@/components/campaigns/CampaignCard';
+import { getFundraisingContract } from '@/services/fundraisingConfig';
+import { Button } from '@/components/ui/button';
+import { useSession } from 'next-auth/react';
 
-// Жишээ ханш
 const ETH_TO_MNT_RATE = 6_000_000;
 
-// --------- ТӨЛӨВ ТООЦОХ ФУНКЦ ---------
+// Compute status based on campaign data
 function computeStatus(c: Campaign): string {
-  // Хугацаа дууссан (isActive=false) эсвэл идэвхтэй (isActive=true)
   if (!c.isActive) {
-    // raisedWei >= goalWei => амжилттай
     if (c.raisedWei >= c.goalWei) {
       return 'Хугацаа дууссан (Амжилттай)';
     } else {
       return 'Хугацаа дууссан (Амжилтгүй)';
     }
   } else {
-    // isActive = true
     if (c.raisedWei === BigInt(0)) {
       return 'Шинээр үүссэн';
     } else {
@@ -40,18 +34,17 @@ function computeStatus(c: Campaign): string {
 export default function CampaignsPage() {
   const router = useRouter();
   const { data: session } = useSession();
-
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Хайлт & Фильтрийн state
+  // Хайлт & Фильтрийн state (optional)
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState(''); // 'хандив', 'хөрөнгө оруулалт', эсвэл ''
-  const [statusFilter, setStatusFilter] = useState(''); // 'Шинээр үүссэн', 'Хэрэгжиж байгаа', 'Хугацаа дууссан (Амжилттай)', 'Хугацаа дууссан (Амжилтгүй)' эсвэл ''
+  const [filterType, setFilterType] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
-  // 1) currentUser (Metamask address)
+  // 1) Get current user from MetaMask
   useEffect(() => {
     async function detectUser() {
       if ((window as any)?.ethereum) {
@@ -63,12 +56,11 @@ export default function CampaignsPage() {
     detectUser();
   }, []);
 
-  // 2) Кампанит ажлуудыг татах
+  // 2) Fetch campaigns from contract
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-
         let provider: ethers.BrowserProvider | ethers.JsonRpcProvider;
         if ((window as any)?.ethereum) {
           provider = new ethers.BrowserProvider((window as any).ethereum);
@@ -80,10 +72,7 @@ export default function CampaignsPage() {
         const contract = getFundraisingContract(provider);
         const allCampaigns = await contract.getAllCampaigns();
 
-        // Энэ жишээнд зөвхөн isActive=true кампанит ажлуудыг авна (хэрэв бүгдийг үзүүлэх бол энэ хэсгийг өөрчил)
-        const activeOnes = allCampaigns.filter((c: any) => c.isActive);
-
-        // parse
+        // Parse campaigns (for simplicity, бүх кампанит ажлыг авах)
         const parsedCampaigns: Campaign[] = allCampaigns.map((c: any) => {
           const goalWei = c[5] as bigint;
           const raisedWei = c[6] as bigint;
@@ -111,11 +100,9 @@ export default function CampaignsPage() {
         });
 
         setCampaigns(parsedCampaigns);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setError(
-          'Кампанит ажлуудыг татахад алдаа гарлаа: ' + (err as Error).message
-        );
+        setError('Кампанит ажлуудыг татахад алдаа гарлаа: ' + err.message);
       } finally {
         setLoading(false);
       }
@@ -124,28 +111,54 @@ export default function CampaignsPage() {
     fetchData();
   }, []);
 
-  // 3) Хайлт + Фильтр
+  // 3) Filter campaigns based on searchTerm, filterType, statusFilter (optional)
   const filteredCampaigns = campaigns.filter((camp) => {
-    // (A) Хайлт
     const matchSearch =
       camp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       camp.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-    // (B) Ангилал (primaryCategory) ашиглан шүүх
     const matchFilter =
-      filterType === ''
-        ? true
-        : camp.primaryCategory.toLowerCase() === filterType.toLowerCase();
-
-    // (C) Төлөв (statusFilter) ашиглан шүүх
-    const campaignStatus = computeStatus(camp); // "Шинээр үүссэн", "Хэрэгжиж байгаа", "Хугацаа дууссан (Амжилттай)", "Хугацаа дууссан (Амжилтгүй)"
+      filterType === '' ||
+      camp.primaryCategory.toLowerCase() === filterType.toLowerCase();
+    const campaignStatus = computeStatus(camp);
     const matchStatus =
-      statusFilter === ''
-        ? true
-        : campaignStatus.toLowerCase() === statusFilter.toLowerCase();
+      statusFilter === '' ||
+      campaignStatus.toLowerCase() === statusFilter.toLowerCase();
 
     return matchSearch && matchFilter && matchStatus;
   });
+
+  // 4) Group campaigns by status
+  const statusGroups: { [key: string]: Campaign[] } = {
+    'Шинээр үүссэн': [],
+    'Хэрэгжиж байгаа': [],
+    'Хугацаа дууссан (Амжилттай)': [],
+    'Хугацаа дууссан (Амжилтгүй)': [],
+  };
+
+  filteredCampaigns.forEach((camp) => {
+    const status = computeStatus(camp);
+    if (statusGroups[status]) {
+      statusGroups[status].push(camp);
+    } else {
+      statusGroups[status] = [camp];
+    }
+  });
+
+  const handleCreateCampaign = async () => {
+    try {
+      const res = await fetch('/api/user/kyc-status');
+      const data = await res.json();
+
+      if (data.kycVerified) {
+        router.push('/campaigns/create');
+      } else {
+        router.push('/kyc');
+      }
+    } catch (err) {
+      console.error('KYC статус шалгахад алдаа:', err);
+      router.push('/login'); // эсвэл error үзүүлж болно
+    }
+  };
 
   return (
     <div className='container mx-auto px-4 py-8 bg-white'>
@@ -153,18 +166,14 @@ export default function CampaignsPage() {
         <h1 className='text-3xl font-bold text-blue-600'>
           Бүх кампанит ажлууд
         </h1>
-
-        {/* createCampaign товч -- Link биш, Button хэлбэр */}
-        {session?.user && (
-          <Link href='/campaigns/create'>
-            <Button className='bg-blue-600 hover:bg-blue-500 text-white'>
-              Кампанит ажил үүсгэх
-            </Button>
-          </Link>
-        )}
+        <Button
+          onClick={handleCreateCampaign}
+          className='bg-blue-600 hover:bg-blue-500 text-white'
+        >
+          Кампанит ажил үүсгэх
+        </Button>
       </div>
 
-      {/* Алдаа гарвал Alert харуулах */}
       {error && (
         <Alert
           variant='destructive'
@@ -208,46 +217,35 @@ export default function CampaignsPage() {
             <option value='хөрөнгө оруулалт'>Хөрөнгө оруулалт</option>
           </select>
         </div>
-
-        {/* Төлөвөөр шүүх */}
-        <div className='relative'>
-          <Filter className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5' />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className='pl-9 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value=''>Төлөвөөр шүүх</option>
-            <option value='Шинээр үүссэн'>Шинээр үүссэн</option>
-            <option value='Хэрэгжиж байгаа'>Хэрэгжиж байгаа</option>
-            <option value='Хугацаа дууссан (Амжилттай)'>
-              Хугацаа дууссан (Амжилттай)
-            </option>
-            <option value='Хугацаа дууссан (Амжилтгүй)'>
-              Хугацаа дууссан (Амжилтгүй)
-            </option>
-          </select>
-        </div>
       </div>
 
       {loading ? (
-        // Loading skeleton
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
           {[...Array(3)].map((_, i) => (
             <Skeleton key={i} className='h-64 w-full rounded-md bg-gray-300' />
           ))}
         </div>
       ) : (
-        // Бодит Campaign Card‐ууд
-        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-          {filteredCampaigns.map((camp) => (
-            <CampaignCard
-              key={camp.id}
-              campaign={camp}
-              currentUser={currentUser}
-            />
-          ))}
-        </div>
+        // Grouped display: For each status group, if non-empty, render a header and grid row
+        Object.entries(statusGroups).map(([groupStatus, groupCampaigns]) => {
+          if (groupCampaigns.length === 0) return null;
+          return (
+            <div key={groupStatus} className='mb-8'>
+              <h2 className='text-2xl font-semibold text-gray-800 mb-4'>
+                {groupStatus}
+              </h2>
+              <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+                {groupCampaigns.map((camp) => (
+                  <CampaignCard
+                    key={camp.id}
+                    campaign={camp}
+                    currentUser={currentUser}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })
       )}
     </div>
   );
