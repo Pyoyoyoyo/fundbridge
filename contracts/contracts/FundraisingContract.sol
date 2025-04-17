@@ -1,17 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// Жишээ: WorldID эсвэл KYC гэрээний интерфэйс
-import "./IWorldID.sol";
-
 /**
  * @title FundraisingContract
  * @dev Кампанит ажил үүсгэх, түүнд хандив авах, метадата шинэчлэх зэрэг логик.
  */
-
-interface IKYC {
-    function isKycApprovedUser(address user) external view returns (bool);
-}
 
 contract FundraisingContract {
     // ----------------------------------------------------
@@ -54,9 +47,6 @@ contract FundraisingContract {
     // userAddress -> activeCampaignId (0 бол идэвхтэй кампанит ажил байхгүй)
     mapping(address => uint) public userActiveCampaign;
 
-    // World ID (эсвэл KYC) гэрээний хаяг - одоогоор ашиглахгүй, жишээ
-    address public kycContract;
-
     // ----------------------------------------------------
     // 3) Events
     // ----------------------------------------------------
@@ -85,19 +75,7 @@ contract FundraisingContract {
     // ----------------------------------------------------
     // 4) Constructor
     // ----------------------------------------------------
-    constructor() /* address _kycContract */
-    {
-        // kycContract = _kycContract;
-    }
-
-    // Хэрэв KYC шалгахыг хүсвэл энэ мэтээр ашиглаж болно:
-    // modifier onlyKycApproved() {
-    //     require(
-    //         IKYC(kycContract).isKycApprovedUser(msg.sender),
-    //         "User not KYC-approved!"
-    //     );
-    //     _;
-    // }
+    constructor() {}
 
     // ----------------------------------------------------
     // 5) createCampaign
