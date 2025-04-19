@@ -10,7 +10,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { userId } = body;
-
+    const returnUrl = process.env.NEXTAUTH_URL
+      ? `${process.env.NEXTAUTH_URL}/kyc/success`
+      : 'https://fundbridge-tawny.vercel.app/kyc/success';
     if (!userId) {
       return new Response(JSON.stringify({ error: 'userId is required' }), {
         status: 400,
