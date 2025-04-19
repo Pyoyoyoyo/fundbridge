@@ -1,37 +1,70 @@
+// app/api/auth/signup/route.ts
 import { hash } from 'bcryptjs';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  await dbConnect();
-  const { email, password, name } = await req.json();
+  try {
+    await dbConnect();
+  } catch (err: any) {
+    console.error('💥 MongoDB connect error:', err);
+    return NextResponse.json(
+      { error: 'Failed to connect to database' },
+      { status: 500 }
+    );
+  }
 
-  console.log('📥 Бүртгүүлэх хүсэлт ирлээ');
-  console.log('➡️ Хүлээж авсан email:', email);
-  console.log('➡️ Хүлээж авсан password:', password);
+  let body: { email?: string; password?: string; name?: string };
+  try {
+    body = await req.json();
+  } catch (err) {
+    return NextResponse.json(
+      { error: 'Invalid JSON payload' },
+      { status: 400 }
+    );
+  }
 
+  const { email, password, name } = body;
   if (!email || !password || !name) {
-    return new Response(JSON.stringify({ error: 'Бүх талбарыг бөглөнө үү' }), {
-      status: 400,
-    });
+    return NextResponse.json(
+      { error: 'Бүх талбарыг бөглөнө үү' },
+      { status: 400 }
+    );
   }
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return new Response(JSON.stringify({ error: 'И-мэйл бүртгэлтэй байна' }), {
-      status: 409,
-    });
+  // check for existing user
+  try {
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return NextResponse.json(
+        { error: 'И-мэйл бүртгэлтэй байна' },
+        { status: 409 }
+      );
+    }
+  } catch (err) {
+    console.error('💥 User lookup error', err);
+    return NextResponse.json(
+      { error: 'Failed to query user' },
+      { status: 500 }
+    );
   }
 
-  const hashedPassword = await hash(password, 12);
-  console.log('🔐 hashedPassword:', hashedPassword);
+  // hash + create
+  let newUser;
+  try {
+    const hashed = await hash(password, 12);
+    newUser = await User.create({ email, name, password: hashed });
+  } catch (err) {
+    console.error('💥 User create error', err);
+    return NextResponse.json({ error: 'Failed to save user' }, { status: 500 });
+  }
 
-  const user = await User.create({ email, name, password: hashedPassword });
-  console.log('✅ Хэрэглэгч хадгалагдлаа:', user);
-
-  return new Response(
-    JSON.stringify({ message: 'Амжилттай бүртгэгдлээ', user }),
+  return NextResponse.json(
+    {
+      message: 'Амжилттай бүртгэгдлээ',
+      user: { id: newUser._id, email, name },
+    },
     { status: 201 }
   );
 }

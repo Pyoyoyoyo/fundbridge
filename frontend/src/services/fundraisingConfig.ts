@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-export const CONTRACT_ADDRESS = '0x833a49B99acA780e601D5D249509dc681Af4a510';
+export const CONTRACT_ADDRESS = '0xe1Ba3fA8daE79c34CF5CD563B8f5d08Faf56d81D';
 export const CONTRACT_ABI = [
   {
     inputs: [],
@@ -588,19 +588,6 @@ export const CONTRACT_ABI = [
         internalType: 'struct FundraisingContract.Donation[]',
         name: '',
         type: 'tuple[]',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'kycContract',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
       },
     ],
     stateMutability: 'view',

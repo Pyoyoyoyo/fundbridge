@@ -167,7 +167,7 @@ export default function MyItemsPage() {
             alt='No items'
             className='w-32 h-32 object-contain mb-2 opacity-70'
           />
-          <p className='text-sm'>Та одоогоор бараа зарж байршуулсангүй.</p>
+          <p className='text-sm'>Та одоогоор бараа зарж байршуулаагүй байна.</p>
         </div>
       ) : (
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-3'>

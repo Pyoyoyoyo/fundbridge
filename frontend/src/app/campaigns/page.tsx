@@ -14,21 +14,13 @@ import { useSession } from 'next-auth/react';
 
 const ETH_TO_MNT_RATE = 6_000_000;
 
-// Compute status based on campaign data
 function computeStatus(c: Campaign): string {
   if (!c.isActive) {
-    if (c.raisedWei >= c.goalWei) {
-      return 'Хугацаа дууссан (Амжилттай)';
-    } else {
-      return 'Хугацаа дууссан (Амжилтгүй)';
-    }
-  } else {
-    if (c.raisedWei === BigInt(0)) {
-      return 'Шинээр үүссэн';
-    } else {
-      return 'Хэрэгжиж байгаа';
-    }
+    return c.raisedWei >= c.goalWei
+      ? 'Хугацаа дууссан (Амжилттай)'
+      : 'Хугацаа дууссан (Амжилтгүй)';
   }
+  return c.raisedWei === BigInt(0) ? 'Шинээр үүссэн' : 'Хэрэгжиж байгаа';
 }
 
 export default function CampaignsPage() {
@@ -38,32 +30,48 @@ export default function CampaignsPage() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Хайлт & Фильтрийн state (optional)
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // 1) Get current user from MetaMask
+  // 1) Detect & log MetaMask account
   useEffect(() => {
     async function detectUser() {
       if ((window as any)?.ethereum) {
-        const provider = new ethers.BrowserProvider((window as any).ethereum);
+        const provider = new BrowserProvider((window as any).ethereum);
         const accounts = await provider.send('eth_requestAccounts', []);
+        console.log('🔑 MetaMask account:', accounts[0]);
         setCurrentUser(accounts[0]);
       }
     }
     detectUser();
-  }, []);
 
-  // 2) Fetch campaigns from contract
+    // listen for account changes
+    if ((window as any)?.ethereum?.on) {
+      (window as any).ethereum.on('accountsChanged', (accounts: string[]) => {
+        console.log('🔄 Accounts changed:', accounts);
+        setCurrentUser(accounts[0] || null);
+      });
+    }
+
+    return () => {
+      if ((window as any)?.ethereum?.removeListener) {
+        (window as any).ethereum.removeListener(
+          'accountsChanged',
+          (accounts: string[]) => setCurrentUser(accounts[0] || null)
+        );
+      }
+    };
+  }, [session]);
+
+  // 2) Fetch campaigns and log raw owner
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
         let provider: ethers.BrowserProvider | ethers.JsonRpcProvider;
         if ((window as any)?.ethereum) {
-          provider = new ethers.BrowserProvider((window as any).ethereum);
+          provider = new BrowserProvider((window as any).ethereum);
           await provider.send('eth_requestAccounts', []);
         } else {
           provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
@@ -72,14 +80,12 @@ export default function CampaignsPage() {
         const contract = getFundraisingContract(provider);
         const allCampaigns = await contract.getAllCampaigns();
 
-        // Parse campaigns (for simplicity, бүх кампанит ажлыг авах)
         const parsedCampaigns: Campaign[] = allCampaigns.map((c: any) => {
+          console.log('🏷️ contract owner raw:', c[1]);
           const goalWei = c[5] as bigint;
           const raisedWei = c[6] as bigint;
-
           const goalEth = parseFloat(ethers.formatEther(goalWei));
           const raisedEth = parseFloat(ethers.formatEther(raisedWei));
-
           const goalMnt = Math.floor(goalEth * ETH_TO_MNT_RATE);
           const raisedMnt = Math.floor(raisedEth * ETH_TO_MNT_RATE);
 
@@ -111,7 +117,7 @@ export default function CampaignsPage() {
     fetchData();
   }, []);
 
-  // 3) Filter campaigns based on searchTerm, filterType, statusFilter (optional)
+  // 3) Filter & group campaigns (unchanged)
   const filteredCampaigns = campaigns.filter((camp) => {
     const matchSearch =
       camp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -127,36 +133,26 @@ export default function CampaignsPage() {
     return matchSearch && matchFilter && matchStatus;
   });
 
-  // 4) Group campaigns by status
   const statusGroups: { [key: string]: Campaign[] } = {
     'Шинээр үүссэн': [],
     'Хэрэгжиж байгаа': [],
     'Хугацаа дууссан (Амжилттай)': [],
     'Хугацаа дууссан (Амжилтгүй)': [],
   };
-
   filteredCampaigns.forEach((camp) => {
-    const status = computeStatus(camp);
-    if (statusGroups[status]) {
-      statusGroups[status].push(camp);
-    } else {
-      statusGroups[status] = [camp];
-    }
+    const st = computeStatus(camp);
+    (statusGroups[st] ||= []).push(camp);
   });
 
+  // Create campaign handler (unchanged)
   const handleCreateCampaign = async () => {
     try {
       const res = await fetch('/api/user/kyc-status');
       const data = await res.json();
-
-      if (data.kycVerified) {
-        router.push('/campaigns/create');
-      } else {
-        router.push('/kyc');
-      }
-    } catch (err) {
-      console.error('KYC статус шалгахад алдаа:', err);
-      router.push('/login'); // эсвэл error үзүүлж болно
+      if (data.kycVerified) router.push('/campaigns/create');
+      else router.push('/kyc');
+    } catch {
+      router.push('/login');
     }
   };
 
