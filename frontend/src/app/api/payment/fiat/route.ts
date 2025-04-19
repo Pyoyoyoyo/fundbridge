@@ -1,4 +1,5 @@
 // app/api/payment/fiat/route.ts
+import { Alert } from '@/components/ui/alert';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -13,6 +14,10 @@ export async function POST(req: NextRequest) {
 
     // 2) DB‐д "FIAT төлбөр хүлээн авсан" гэдгийг тэмдэглэх
     // ... e.g. Payment.create({ campaignId, amount: amountMnt, type: 'FIAT' })
+    Alert({
+      title: 'Төлбөр хүлээн авсан',
+      children: `Campaign ID: ${campaignId}, Amount: ${amountMnt} MNT`,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
