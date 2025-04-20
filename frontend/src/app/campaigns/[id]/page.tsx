@@ -3,34 +3,23 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ethers } from 'ethers';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 import { getFundraisingContract } from '@/services/fundraisingConfig';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import DonateButton from '@/components/SharedComponents/DonateButton';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
-// Tab Components
-import DetailTab from '@/components/campaigns/[id]/tabs/DetailTab';
-import RisksTab from '@/components/campaigns/[id]/tabs/RisksTab';
-import FAQTab from '@/components/campaigns/[id]/tabs/FAQTab';
-import PeopleTab from '@/components/campaigns/[id]/tabs/PeopleTab';
-import RewardsTab from '@/components/campaigns/[id]/tabs/RewardsTab';
-import PaymentTab from '@/components/campaigns/[id]/tabs/PaymentTab';
+import CampaignHeaderSection from '@/components/campaigns/[id]/CampaignHeaderSection';
+import TabButtonsSection from '@/components/campaigns/[id]/TabButtonsSection';
+import TabsContentSection from '@/components/campaigns/[id]/TabsContentSection';
+import DonateSection from '@/components/campaigns/[id]/DonateSection';
+import TeamSection from '@/components/campaigns/[id]/TeamSection';
 
-// Жишээ: Төслийн баг, эзэмшигчийн мэдээлэл харуулах жижиг компонент
-import TeamCard from '@/components/campaigns/[id]/tabs/TeamCard';
-import { TabButton } from '@/components/SharedComponents/TabButton';
-import { Info, ParkingCircle } from 'lucide-react';
-import WarningBoxes from '@/components/campaigns/[id]/tabs/WarningBoxes';
-import CommentsTab from '@/components/campaigns/[id]/tabs/CommentsTab';
 import { Campaign } from '@/app/interfaces';
 
 const ETH_TO_MNT_RATE = 6_000_000;
 
-// ----- Fallback ашиглах туслах функц (IPFS JSON татах) -----
+// IPFS fallback fetch
 async function fetchMetadataWithFallback(cid: string) {
   const gateways = [
     `/api/pinataDownload?cid=${cid}`,
@@ -40,75 +29,48 @@ async function fetchMetadataWithFallback(cid: string) {
   for (const url of gateways) {
     try {
       const resp = await fetch(url);
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status} - ${resp.statusText}`);
-      }
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       return data;
-    } catch (err) {
-      console.warn(`Fetch failed from ${url}:`, err);
+    } catch (e) {
+      console.warn(`Failed to fetch from ${url}`);
     }
   }
-  throw new Error('All gateway fetch attempts failed');
-}
-function computeStatus(c: Campaign): string {
-  // Campaign интерфэйст wasGoalReached: boolean гэж нэмсэн гэж үзье
-  if (!c.isActive) {
-    // Хаагдсан
-    if (c.wasGoalReached) {
-      return 'Хугацаа дууссан (Амжилттай)';
-    } else {
-      return 'Хугацаа дууссан (Амжилтгүй)';
-    }
-  } else {
-    // Идэвхтэй
-    if (!c.wasGoalReached && c.raisedWei === BigInt(0)) {
-      return 'Шинээр үүссэн';
-    } else {
-      return 'Хэрэгжиж байгаа';
-    }
-  }
+  throw new Error('All IPFS fetch attempts failed');
 }
 
-type ActiveTab =
-  | 'detail'
-  | 'risks'
-  | 'faq'
-  | 'people'
-  | 'rewards'
-  | 'comments'
-  | 'payment';
+function computeStatus(c: Campaign): string {
+  if (!c.isActive)
+    return c.wasGoalReached
+      ? 'Хугацаа дууссан (Амжилттай)'
+      : 'Хугацаа дууссан (Амжилтгүй)';
+  if (!c.wasGoalReached && c.raisedWei === BigInt(0)) return 'Шинээр үүссэн';
+  return 'Хэрэгжиж байгаа';
+}
 
 export default function CampaignDetailPage() {
   const { id } = useParams();
+
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [metadata, setMetadata] = useState<any>(null);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('detail');
+  const [activeTab, setActiveTab] = useState<
+    'detail' | 'risks' | 'faq' | 'people' | 'rewards' | 'comments' | 'payment'
+  >('detail');
 
-  // ---------------------------
-  // 1) currentUser (MetaMask)
-  // ---------------------------
   useEffect(() => {
     async function detectUser() {
       if ((window as any)?.ethereum) {
         const provider = new ethers.BrowserProvider((window as any).ethereum);
         const accounts = await provider.send('eth_requestAccounts', []);
-        if (accounts.length > 0) {
-          setCurrentUser(accounts[0].toLowerCase());
-        }
+        if (accounts.length > 0) setCurrentUser(accounts[0].toLowerCase());
       }
     }
     detectUser();
   }, []);
 
-  // ---------------------------
-  // 2) Кампанийн мэдээлэл татах
-  // ---------------------------
   useEffect(() => {
     async function fetchCampaign() {
       try {
@@ -124,29 +86,9 @@ export default function CampaignDetailPage() {
 
         const contract = getFundraisingContract(provider);
         const data = await contract.getCampaign(Number(id));
-        // data = [
-        //   0: id,
-        //   1: owner,
-        //   2: title,
-        //   3: primaryCategory,
-        //   4: description,
-        //   5: goalWei,
-        //   6: raisedWei,
-        //   7: isActive,
-        //   8: imageUrl,
-        //   9: metadataHash,
-        //   10: deadline,
-        //   11: wasGoalReached
-        // ];
 
-        const rawGoalWei = data[5];
-        const rawRaisedWei = data[6];
-
-        const goalEth = parseFloat(ethers.formatEther(rawGoalWei));
-        const raisedEth = parseFloat(ethers.formatEther(rawRaisedWei));
-
-        const goalMnt = Math.floor(goalEth * ETH_TO_MNT_RATE);
-        const raisedMnt = Math.floor(raisedEth * ETH_TO_MNT_RATE);
+        const goalEth = parseFloat(ethers.formatEther(data[5]));
+        const raisedEth = parseFloat(ethers.formatEther(data[6]));
 
         const campaignObj: Campaign = {
           id: Number(data[0]),
@@ -154,10 +96,10 @@ export default function CampaignDetailPage() {
           title: data[2],
           primaryCategory: data[3],
           description: data[4],
-          goalWei: BigInt(rawGoalWei.toString()),
-          raisedWei: BigInt(rawRaisedWei.toString()),
-          goalMnt,
-          raisedMnt,
+          goalWei: BigInt(data[5].toString()),
+          raisedWei: BigInt(data[6].toString()),
+          goalMnt: Math.floor(goalEth * ETH_TO_MNT_RATE),
+          raisedMnt: Math.floor(raisedEth * ETH_TO_MNT_RATE),
           isActive: data[7],
           imageUrl: data[8] || '',
           metadataHash: data[9] || '',
@@ -167,16 +109,14 @@ export default function CampaignDetailPage() {
 
         setCampaign(campaignObj);
 
-        // Metadata татах
         if (campaignObj.metadataHash) {
           try {
-            // Та IPFS fallback fetch логикоороо metadata-гаа татна
             const metaJson = await fetchMetadataWithFallback(
               campaignObj.metadataHash
             );
             setMetadata(metaJson);
-          } catch (ipfsErr: any) {
-            console.warn('IPFS fetch error:', ipfsErr.message);
+          } catch (e) {
+            console.warn('IPFS fetch error:', e);
           }
         }
       } catch (err: any) {
@@ -190,9 +130,6 @@ export default function CampaignDetailPage() {
     if (id) fetchCampaign();
   }, [id]);
 
-  // ---------------------------
-  // Rendering
-  // ---------------------------
   if (loading) {
     return (
       <div className='min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-blue-50'>
@@ -205,9 +142,7 @@ export default function CampaignDetailPage() {
   if (error) {
     return (
       <Alert variant='destructive' className='m-4'>
-        <div className='flex items-center gap-2 text-red-600'>
-          <AlertTitle>Алдаа</AlertTitle>
-        </div>
+        <AlertTitle>Алдаа</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
@@ -216,244 +151,44 @@ export default function CampaignDetailPage() {
   if (!campaign) {
     return (
       <Alert variant='destructive' className='m-4'>
-        <div className='flex items-center gap-2 text-red-600'>
-          <AlertTitle>Алдаа</AlertTitle>
-        </div>
+        <AlertTitle>Алдаа</AlertTitle>
         <AlertDescription>Кампанит ажил олдсонгүй.</AlertDescription>
       </Alert>
     );
   }
 
-  // (A) Төлөв, эзэмшигч, зорилгодоо хүрсэн эсэх
-  const status = computeStatus(campaign);
-  const isOwner = currentUser === campaign.owner; // Тухайн metamask хэрэглэгч owner мөн эсэх
-  const goalReached = campaign.raisedWei >= campaign.goalWei;
-
-  // (B) Хугацааны үлдсэн цаг
-  const nowSec = Math.floor(Date.now() / 1000);
-  const timeLeftSec = campaign.deadline - nowSec;
-  let timeLeftText = '';
-  if (timeLeftSec <= 0) {
-    timeLeftText = 'Хугацаа дууссан';
-  } else {
-    const days = Math.floor(timeLeftSec / 86400);
-    const hours = Math.floor((timeLeftSec % 86400) / 3600);
-    const minutes = Math.floor(((timeLeftSec % 86400) % 3600) / 60);
-    timeLeftText = `${days} өдөр ${hours} цаг ${minutes} мин үлдлээ`;
-  }
-
-  // (C) Дэвшил (MNT)
-  const progressPercent =
-    campaign.goalMnt > 0
-      ? Math.min((campaign.raisedMnt / campaign.goalMnt) * 100, 100).toFixed(0)
-      : '0';
+  const isOwner = currentUser === campaign.owner;
 
   return (
     <motion.div
-      className='min-h-screen bg-gradient-to-b from-white to-blue-50 p-8'
+      className='min-h-screen bg-gradient-to-b from-white to-blue-50 p-4'
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      <div className='max-w-7xl mx-auto'>
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-          {/* --------------------------------
-                LEFT: Tabs (2 col-span)
-            -------------------------------- */}
-          <div className='lg:col-span-2 space-y-4'>
-            {/* Campaign Header */}
-            <div className='bg-white shadow-lg rounded-lg p-4'>
-              <h1 className='text-2xl font-bold text-gray-800'>
-                {campaign.title}
-              </h1>
-              <p className='text-sm text-blue-600'>
-                {campaign.primaryCategory}
-              </p>
-              <p className='text-gray-700 mt-2 leading-relaxed'>
-                {campaign.description}
-              </p>
-
-              {campaign.imageUrl && (
-                <div className='mt-3 rounded overflow-hidden'>
-                  <motion.img
-                    src={campaign.imageUrl}
-                    alt='Campaign'
-                    className='w-full h-auto object-cover transition-transform duration-300 hover:scale-105'
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        '/images/no-image.png';
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Хэрэв эзэмшигч бол энэ текстийг үзүүлэх */}
-              {isOwner && (
-                <p className='mt-3 text-sm text-green-600 font-medium'>
-                  Та энэ кампанит ажлын эзэмшигч байна.
-                </p>
-              )}
-            </div>
-
-            {/* Tabs */}
-            <div className='bg-white shadow rounded-lg p-4'>
-              <div className='border-b border-gray-200 flex gap-4 pb-2'>
-                <TabButton
-                  label='Дэлгэрэнгүй'
-                  isActive={activeTab === 'detail'}
-                  onClick={() => setActiveTab('detail')}
-                />
-                <TabButton
-                  label='Эрсдэл'
-                  isActive={activeTab === 'risks'}
-                  onClick={() => setActiveTab('risks')}
-                />
-                <TabButton
-                  label='FAQ'
-                  isActive={activeTab === 'faq'}
-                  onClick={() => setActiveTab('faq')}
-                />
-                <TabButton
-                  label='Баг'
-                  isActive={activeTab === 'people'}
-                  onClick={() => setActiveTab('people')}
-                />
-                <TabButton
-                  label='Урамшуулал'
-                  isActive={activeTab === 'rewards'}
-                  onClick={() => setActiveTab('rewards')}
-                />
-                <TabButton
-                  label='Санхүүжилт'
-                  isActive={activeTab === 'payment'}
-                  onClick={() => setActiveTab('payment')}
-                />
-                <TabButton
-                  label='Сэтгэгдэл'
-                  isActive={activeTab === 'comments'}
-                  onClick={() => setActiveTab('comments')}
-                />
-              </div>
-
-              <div className='mt-4'>
-                {activeTab === 'detail' && <DetailTab metadata={metadata} />}
-                {activeTab === 'risks' && <RisksTab metadata={metadata} />}
-                {activeTab === 'faq' && <FAQTab metadata={metadata} />}
-                {activeTab === 'people' && <PeopleTab metadata={metadata} />}
-                {activeTab === 'rewards' && <RewardsTab metadata={metadata} />}
-                {activeTab === 'payment' && <PaymentTab metadata={metadata} />}
-                {activeTab === 'comments' && (
-                  <CommentsTab campaignId={campaign.id} />
-                )}
-              </div>
-
-              <WarningBoxes />
-            </div>
-          </div>
-
-          {/* --------------------------------
-                RIGHT: Donate + TeamCard + ...
-            -------------------------------- */}
-          <div className='space-y-4 lg:sticky lg:top-6 self-start h-fit'>
-            {/* Хандивын мэдээлэл */}
-            <div className='bg-white shadow rounded-lg p-4'>
-              <h3 className='text-xl font-semibold text-gray-800 mb-2'>
-                Хандивын мэдээлэл
-              </h3>
-
-              <div className='my-2'>
-                <Progress
-                  value={parseFloat(progressPercent)}
-                  className='my-2 bg-gray-200'
-                />
-                <div className='text-sm text-gray-800 flex justify-between'>
-                  <span>
-                    Зорилго:{' '}
-                    <strong>{campaign.goalMnt.toLocaleString()}₮</strong>
-                  </span>
-                  <span>
-                    Цугласан:{' '}
-                    <strong className='text-blue-600'>
-                      {campaign.raisedMnt.toLocaleString()}₮
-                    </strong>
-                  </span>
-                </div>
-              </div>
-
-              <p className='text-sm text-gray-600 mt-2'>
-                Төслийн үлдсэн хугацаа:{' '}
-                <strong className='text-blue-600'>{timeLeftText}</strong>
-              </p>
-
-              {/* Хандивын товч — зөвхөн идэвхтэй үед */}
-              {campaign.isActive ? (
-                <DonateButton
-                  campaignId={campaign.id}
-                  className='w-full py-2 bg-blue-600 hover:bg-blue-500 text-white mt-3'
-                />
-              ) : (
-                <p className='text-red-500 font-medium mt-3'>
-                  Энэ кампанит ажил хаагдсан байна
-                </p>
-              )}
-
-              {/* Хөрөнгө татах товч — зөвхөн эзэмшигч, идэвхтэй, зорилгодоо хүрсэн үед */}
-              {isOwner && campaign.isActive && goalReached && (
-                <div className='mt-4'>
-                  <a href={`/campaigns/${campaign.id}/withdraw`}>
-                    <Button
-                      variant='outline'
-                      className='text-blue-600 border-blue-600 hover:bg-blue-100 w-full'
-                    >
-                      Хөрөнгө татах
-                    </Button>
-                  </a>
-                </div>
-              )}
-
-              {/* Тайлан гаргах товч — зөвхөн эзэмшигч, хаагдсан, амжилттай үед */}
-              {isOwner && !campaign.isActive && campaign.wasGoalReached && (
-                <div className='mt-4'>
-                  <a href={`/campaigns/${campaign.id}/report`}>
-                    <Button
-                      variant='outline'
-                      className='text-blue-600 border-blue-600 hover:bg-blue-100 w-full'
-                    >
-                      Тайлан гаргах
-                    </Button>
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Төслийн баг */}
-            <TeamCard
-              collaborators={
-                metadata?.people?.collaborators
-                  ? metadata.people.collaborators
-                  : []
-              }
+      <div className='max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6'>
+        {/* Зүүн хэсэг */}
+        <div className='lg:col-span-2 space-y-4'>
+          <CampaignHeaderSection campaign={campaign} isOwner={isOwner} />
+          <div className='bg-white shadow rounded-lg p-4'>
+            <TabButtonsSection
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
             />
-
-            {/* FAQ + Гомдол */}
-            <div className='bg-white shadow rounded-lg p-4'>
-              <p className='text-gray-700 text-sm mb-2'>
-                Хэрэв танд төслийн талаар асуулт байвал{' '}
-                <button
-                  onClick={() => setActiveTab('faq')}
-                  className='text-blue-600 underline'
-                >
-                  FAQ
-                </button>{' '}
-                хэсгээс харна уу.
-              </p>
-              <button
-                onClick={() => alert('Гомдол мэдүүлэх процесс...')}
-                className='text-sm text-red-600 underline'
-              >
-                Гомдол мэдүүлэх
-              </button>
-            </div>
+            <TabsContentSection
+              activeTab={activeTab}
+              metadata={metadata}
+              campaignId={campaign.id}
+            />
           </div>
+        </div>
+
+        {/* Баруун хэсэг */}
+        <div className='space-y-4 lg:sticky lg:top-6 self-start h-fit'>
+          <DonateSection campaign={campaign} isOwner={isOwner} />
+          <TeamSection
+            metadata={metadata}
+            onFAQClick={() => setActiveTab('faq')}
+          />
         </div>
       </div>
     </motion.div>

@@ -151,9 +151,10 @@ export default function MyItemsPage() {
       </motion.div>
 
       {loading ? (
-        <div className='space-y-2'>
-          <Skeleton className='h-5 w-1/2' />
-          <Skeleton className='h-5 w-3/4' />
+        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+          {[...Array(2)].map((_, i) => (
+            <Skeleton key={i} className='h-64 w-full rounded-md bg-gray-300' />
+          ))}
         </div>
       ) : error ? (
         <Alert variant='destructive' className='m-2'>

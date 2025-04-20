@@ -5,19 +5,11 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { BrowserProvider, ethers } from 'ethers';
 import { motion } from 'framer-motion';
-
-// Та өөрийн Fundraising гэрээг дуудахад ашигладаг туслах функцийг импорт
 import { getFundraisingContract } from '@/services/fundraisingConfig';
-
-// UI жишээ
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Briefcase } from 'lucide-react';
-
-// Campaign интерфэйс
 import { Campaign } from '@/app/interfaces/campaign/campaignData';
-
-// CampaignCard компонентоо import
 import { CampaignCard } from '@/components/profile/campaigns/campaignCard';
 
 export default function MyCampaignsPage() {
@@ -35,9 +27,7 @@ export default function MyCampaignsPage() {
     }
   }, [status, router]);
 
-  // -----------------------------------------------------
-  // 1) Миний үүсгэсэн кампаниудыг татах
-  // -----------------------------------------------------
+  // Миний үүсгэсэн кампанит ажлуудыг татах
   useEffect(() => {
     async function fetchMyCampaigns() {
       try {
@@ -51,32 +41,23 @@ export default function MyCampaignsPage() {
           throw new Error('MetaMask not found');
         }
 
-        // MetaMask provider
         const provider = new BrowserProvider((window as any).ethereum);
         await provider.send('eth_requestAccounts', []);
         const signer = await provider.getSigner();
-
-        // Fundraising гэрээ дуудаж бүх кампаниудыг авах
         const fundraising = getFundraisingContract(signer);
         const rawCampaigns = await fundraising.getAllCampaigns();
 
-        // Одоогийн metamask account
         const accounts = await provider.send('eth_accounts', []);
         const currentUser = (accounts[0] as string).toLowerCase();
 
-        // Өөрийн үүсгэсэн (owner === currentUser) кампанит ажлуудыг шүүх
         const filtered = rawCampaigns.filter((c: any) => {
           const owner = (c[1] as string).toLowerCase();
           return owner === currentUser;
         });
 
-        // parse
         const parsed: Campaign[] = filtered.map((c: any) => {
-          // goalWei, raisedWei нь BigNumber эсвэл bigint
           const goalWei = BigInt(c[5].toString());
           const raisedWei = BigInt(c[6].toString());
-
-          // Ether -> MNT (1 ETH ~ 6,000,000 MNT гэж үзье)
           const goalEth = parseFloat(ethers.formatEther(goalWei));
           const raisedEth = parseFloat(ethers.formatEther(raisedWei));
 
@@ -94,7 +75,6 @@ export default function MyCampaignsPage() {
             isActive: c[7],
             imageUrl: c[8] || '',
             metadataHash: c[9] || '',
-            // Мөн campaign.interface.ts дотор goalMnt, raisedMnt талбаруудыг нэмж тодорхойлсон гэж үзнэ
             goalMnt,
             raisedMnt,
           };
@@ -114,18 +94,6 @@ export default function MyCampaignsPage() {
     }
   }, [status, session]);
 
-  // -----------------------------------------------------
-  // Rendering
-  // -----------------------------------------------------
-  if (loading) {
-    return (
-      <div className='min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-blue-50'>
-        <Skeleton className='h-40 w-3/4 rounded-md bg-gray-300 animate-pulse' />
-        <p className='text-gray-500 mt-2'>Ачааллаж байна...</p>
-      </div>
-    );
-  }
-
   return (
     <motion.div
       className='max-w-5xl mx-auto p-6 space-y-6 my-4 bg-white shadow-md rounded-lg'
@@ -144,20 +112,19 @@ export default function MyCampaignsPage() {
         <h1 className='text-2xl font-bold'>Миний Кампанит Ажил</h1>
       </motion.div>
 
+      {/* Main content */}
       {loading ? (
-        // Loading state
-        <div className='space-y-2'>
-          <Skeleton className='h-5 w-1/2' />
-          <Skeleton className='h-5 w-3/4' />
+        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+          {[...Array(2)].map((_, i) => (
+            <Skeleton key={i} className='h-64 w-full rounded-md bg-gray-300' />
+          ))}
         </div>
       ) : error ? (
-        // Алдаа
         <Alert variant='destructive' className='m-2'>
           <AlertTitle>Алдаа</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : myCampaigns.length === 0 ? (
-        // Хоосон
         <div className='text-gray-600 flex flex-col items-center py-4'>
           <img
             src='/images/empty-state.png'
@@ -167,7 +134,6 @@ export default function MyCampaignsPage() {
           <p className='text-sm'>Та одоогоор кампанит ажил үүсгээгүй байна.</p>
         </div>
       ) : (
-        // Өөрийн кампаниуд
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-3'>
           {myCampaigns.map((camp) => (
             <motion.div
@@ -175,7 +141,6 @@ export default function MyCampaignsPage() {
               whileHover={{ scale: 1.01 }}
               className='transition'
             >
-              {/* CampaignCard руу goalMnt, raisedMnt дамжуулсан учраас тэнд харагдана */}
               <CampaignCard campaign={camp} currentUser={camp.owner} />
             </motion.div>
           ))}
