@@ -40,7 +40,6 @@ export default function CampaignsPage() {
       if ((window as any)?.ethereum) {
         const provider = new BrowserProvider((window as any).ethereum);
         const accounts = await provider.send('eth_requestAccounts', []);
-        console.log('🔑 MetaMask account:', accounts[0]);
         setCurrentUser(accounts[0]);
       }
     }
@@ -49,7 +48,6 @@ export default function CampaignsPage() {
     // listen for account changes
     if ((window as any)?.ethereum?.on) {
       (window as any).ethereum.on('accountsChanged', (accounts: string[]) => {
-        console.log('🔄 Accounts changed:', accounts);
         setCurrentUser(accounts[0] || null);
       });
     }
@@ -81,7 +79,6 @@ export default function CampaignsPage() {
         const allCampaigns = await contract.getAllCampaigns();
 
         const parsedCampaigns: Campaign[] = allCampaigns.map((c: any) => {
-          console.log('🏷️ contract owner raw:', c[1]);
           const goalWei = c[5] as bigint;
           const raisedWei = c[6] as bigint;
           const goalEth = parseFloat(ethers.formatEther(goalWei));
