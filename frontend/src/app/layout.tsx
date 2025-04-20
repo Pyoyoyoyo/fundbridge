@@ -6,6 +6,9 @@ import Providers from '@/providers/providers';
 export const metadata: Metadata = {
   title: 'FundBridge',
   description: 'Decentralized fundraising platform',
+  icons: {
+    icon: '/white-logo.png',
+  },
 };
 
 export default function RootLayout({
