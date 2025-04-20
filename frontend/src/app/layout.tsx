@@ -18,7 +18,7 @@ export default function RootLayout({
       <body className='min-h-screen bg-gray-50'>
         <Providers>
           <Header />
-          <main className='container mx-auto py-8'>
+          <main className='container mx-auto'>
             {/**
              * ТУХАЙН ROOT LAYOUT-Д @stripe/react-stripe-js ОРУУЛАХ ШААРДЛАГАГҮЙ
              * Хэрэв бүх child-д нэгэн зэрэг хэрэглэх бол энд StripeProvider-ээр ороож болно

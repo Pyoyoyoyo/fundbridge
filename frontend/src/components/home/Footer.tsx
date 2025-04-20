@@ -3,7 +3,7 @@ import LogoWhite from '@/components/SharedComponents/LogoWhite';
 
 export default function Footer() {
   return (
-    <footer className='bg-gray-900 text-gray-200'>
+    <footer className='bg-gray-900 text-gray-200 w-full'>
       <div className='container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-6 md:flex-row'>
         <div className='flex items-center space-x-2'>
           <LogoWhite />

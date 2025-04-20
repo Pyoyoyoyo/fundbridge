@@ -35,7 +35,7 @@ export default function SocialProofSection() {
   const totalInvestmentMnt = Math.floor(totalInvestmentEth * 6_000_000);
 
   return (
-    <section className='py-12 bg-white px-10'>
+    <section className='py-12 bg-white w-full px-4'>
       <div className='container mx-auto px-4'>
         <motion.h2
           className='mb-6 text-2xl font-semibold text-gray-800 sm:text-3xl text-center'

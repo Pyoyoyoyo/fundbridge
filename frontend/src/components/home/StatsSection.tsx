@@ -51,7 +51,7 @@ export default function StatsSection() {
   const totalRaisedMnt = Math.floor(totalRaisedEth * 6_000_000);
 
   return (
-    <section className='py-12 bg-gray-50 px-10'>
+    <section className='py-12 bg-gray-50 w-full px-4'>
       <div className='container mx-auto px-4 text-center'>
         <motion.h2
           className='text-2xl font-bold text-gray-800 sm:text-3xl mb-8'

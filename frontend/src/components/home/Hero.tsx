@@ -19,8 +19,8 @@ export default function Hero() {
   }
 
   return (
-    <section className='relative overflow-hidden bg-gradient-to-b from-blue-50 to-white p-5'>
-      <div className='container mx-auto flex flex-col-reverse items-center gap-8 px-4 py-16 md:flex-row md:py-24'>
+    <section className='relative overflow-hidden bg-gradient-to-b from-blue-50 to-white w-full mx-auto'>
+      <div className='flex flex-col-reverse items-center gap-8 px-8 py-16 md:flex-row md:py-24 max-w-7xl mx-auto'>
         {/* Зүүн талд: Текст */}
         <motion.div
           className='md:w-1/2'
@@ -41,7 +41,7 @@ export default function Hero() {
             Та төслөө хурдан, итгэлтэйгээр танилцуулж, дэлхий дахинаас хөрөнгө
             оруулалт авах боломжтой.
           </p>
-          <div className='mt-6 flex flex-wrap gap-4'>
+          <div className='mt-6 flex flex-wrap gap-4 justify-center md:justify-start'>
             {/* ✅ KYC шалгалттай товч */}
             <motion.button
               whileHover={{ scale: 1.05 }}

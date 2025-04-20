@@ -180,39 +180,57 @@ export default function CampaignsPage() {
         </Alert>
       )}
 
-      {/* Хайлт & Фильтр */}
-      <div className='mb-6 flex flex-col sm:flex-row gap-4 items-center'>
+      {/* Хайлт & Фильтр хэсэг */}
+      <div className='mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3'>
         {/* Хайлт талбар */}
-        <div className='flex items-center bg-gray-100 rounded px-2 w-full sm:max-w-sm'>
-          <Search className='text-gray-500 w-5 h-5' />
+        <div className='relative'>
+          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5' />
           <input
             type='text'
-            className='bg-transparent px-2 py-2 w-full focus:outline-none'
-            placeholder='Хайх (нэр, тайлбар)'
+            className='w-full rounded-lg border border-gray-300 bg-gray-100 py-2 pl-10 pr-4 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:outline-none transition'
+            placeholder='Кампанит ажил хайх...'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           {searchTerm && (
             <XCircle
-              className='text-gray-400 w-5 h-5 cursor-pointer hover:text-gray-600'
+              className='absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer w-5 h-5'
               onClick={() => setSearchTerm('')}
             />
           )}
         </div>
 
-        {/* Filter (Хандив, Хөрөнгө оруулалт) */}
+        {/* Төрлөөр шүүх */}
         <div className='relative'>
-          <Filter className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5' />
+          <Filter className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5' />
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className='pl-9 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500'
+            className='w-full rounded-lg border border-gray-300 bg-gray-100 py-2 pl-10 pr-4 text-gray-800 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:outline-none transition'
           >
             <option value=''>Төрлөөр шүүх</option>
             <option value='хандив'>Хандив</option>
             <option value='хөрөнгө оруулалт'>Хөрөнгө оруулалт</option>
           </select>
         </div>
+
+        {/* Статус шүүлтүүр (optional future feature) */}
+        {/* 
+        <div className="relative">
+          <AdjustmentsHorizontal className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 bg-gray-100 py-2 pl-10 pr-4 text-gray-800 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:outline-none transition"
+          >
+            <option value="">Статус шүүх</option>
+            <option value="шинээр үүссэн">Шинээр үүссэн</option>
+            <option value="хэрэгжиж байгаа">Хэрэгжиж байгаа</option>
+            <option value="хугацаа дууссан (амжилттай)">Амжилттай дууссан</option>
+            <option value="хугацаа дууссан (амжилтгүй)">Амжилтгүй дууссан</option>
+          </select>
+        </div>
+        */}
       </div>
 
       {loading ? (

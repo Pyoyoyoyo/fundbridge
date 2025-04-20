@@ -51,35 +51,37 @@ export default function Advantages() {
   ];
 
   return (
-    <section className='container mx-auto px-10 py-12'>
-      <motion.h2
-        className='mb-6 text-2xl font-semibold text-gray-800 sm:text-3xl'
-        initial={{ opacity: 0, y: -20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        viewport={{ once: true }}
-      >
-        FundBridge-ийн давуу талууд
-      </motion.h2>
-      <div className='grid gap-8 sm:grid-cols-2 lg:grid-cols-3'>
-        {items.map((item, index) => (
-          <motion.div
-            key={item.title}
-            className='rounded-lg border p-6 shadow-sm hover:shadow-md transition-shadow bg-white'
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            viewport={{ once: true }}
-          >
-            <div className='mb-2 flex items-center gap-2'>
-              {item.icon}
-              <h3 className='text-lg font-medium text-gray-800'>
-                {item.title}
-              </h3>
-            </div>
-            <p className='text-gray-600'>{item.description}</p>
-          </motion.div>
-        ))}
+    <section className='w-full bg-white'>
+      <div className='container mx-auto px-10 py-12'>
+        <motion.h2
+          className='mb-6 text-2xl font-semibold text-gray-800 sm:text-3xl'
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          viewport={{ once: true }}
+        >
+          FundBridge-ийн давуу талууд
+        </motion.h2>
+        <div className='grid gap-8 sm:grid-cols-2 lg:grid-cols-3'>
+          {items.map((item, index) => (
+            <motion.div
+              key={item.title}
+              className='rounded-lg border p-6 shadow-sm hover:shadow-md transition-shadow bg-white'
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              viewport={{ once: true }}
+            >
+              <div className='mb-2 flex items-center gap-2'>
+                {item.icon}
+                <h3 className='text-lg font-medium text-gray-800'>
+                  {item.title}
+                </h3>
+              </div>
+              <p className='text-gray-600'>{item.description}</p>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );

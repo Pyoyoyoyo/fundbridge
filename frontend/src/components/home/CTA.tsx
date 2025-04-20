@@ -5,8 +5,8 @@ import Link from 'next/link';
 
 export default function CTA() {
   return (
-    <section className='relative overflow-hidden bg-gradient-to-r from-blue-600 to-blue-400 text-white'>
-      <div className='container mx-auto px-4 py-16 text-center'>
+    <section className='relative overflow-hidden bg-gradient-to-r from-blue-600 to-blue-400 text-white w-full'>
+      <div className='px-4 py-16 text-center max-w-7xl mx-auto'>
         <motion.h2
           className='mb-4 text-2xl font-semibold sm:text-3xl'
           initial={{ opacity: 0, y: 20 }}
