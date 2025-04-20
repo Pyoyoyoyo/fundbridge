@@ -128,7 +128,7 @@ export default function MyCampaignsPage() {
 
   return (
     <motion.div
-      className='max-w-5xl mx-auto p-4 space-y-6'
+      className='max-w-5xl mx-auto p-6 space-y-6 my-4 bg-white shadow-md rounded-lg'
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
