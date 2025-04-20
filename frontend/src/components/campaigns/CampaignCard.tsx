@@ -31,8 +31,6 @@ export function CampaignCard({
   }
   normalizedOwner = getAddress(campaign.owner.trim());
 
-  console.log('🆚 Comparing addresses:', normalizedUser, 'vs', normalizedOwner);
-
   const isOwner = normalizedUser !== null && normalizedUser === normalizedOwner;
 
   return (
