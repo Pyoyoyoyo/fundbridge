@@ -6,7 +6,7 @@ import { BrowserProvider } from 'ethers';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Image as ImageIcon, Trash2, PlusCircle } from 'lucide-react';
-
+import { createNotification } from '@/lib/notificationService';
 import { getFundraisingContract } from '@/services/fundraisingConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -201,7 +201,46 @@ export default function CampaignReportPage() {
       } else {
         alert('Тайлан амжилттай хадгаллаа (кампани аль хэдийн хаагдсан).');
       }
+      async function createNotificationClient(
+        userId: string,
+        type: string,
+        message: string,
+        link: string
+      ) {
+        try {
+          await fetch('/api/notifications/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId, type, message, link }),
+          });
+        } catch (error) {
+          console.error('Failed to create notification:', error);
+        }
+      }
 
+      const donations = await contractWithSigner.getDonationsHistory(
+        Number(id)
+      );
+
+      const donatorsSet = new Set<string>();
+      for (const donation of donations) {
+        donatorsSet.add(donation.donor);
+      }
+      const donators = Array.from(donatorsSet);
+
+      for (const donatorAddress of donators) {
+        await createNotificationClient(
+          donatorAddress,
+          'report',
+          `New report added to the campaign "${campaignData2[2]}"!`,
+          `/campaigns/${id}`
+        );
+      }
+
+      alert('Тайлан хадгалагдлаа. Бүх хандивлагчдад мэдэгдэл илгээгдлээ.');
+      // (H) Хадгалсны дараа тайлангийн хуудсанд шилжих
       router.push(`/campaigns/${id}`);
     } catch (err: any) {
       console.error(err);

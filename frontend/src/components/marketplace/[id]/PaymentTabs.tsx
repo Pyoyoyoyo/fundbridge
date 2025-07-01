@@ -11,12 +11,7 @@ import { FiatForm } from '@/components/marketplace/[id]/PurchaseForms/FiatForm';
 import CardForm from '@/components/campaigns/[id]/donate/DonateForms/CardForm';
 import { getMarketplaceContract } from '@/services/marketplaceConfig';
 import { useRouter } from 'next/navigation';
-
-// QPay буюу MNT QR төлбөрийн жишээ
-interface QPayFormData {
-  phone: string;
-  amountMnt: string;
-}
+import { useSession } from 'next-auth/react';
 
 /**
  * PaymentTabs – ETH, Fiat, Card, QPay гэсэн 4 сонголттой таб
@@ -34,39 +29,7 @@ export default function PaymentTabs({
   const [activeMethod, setActiveMethod] = useState<
     'fiat' | 'eth' | 'card' | 'qpay'
   >('eth');
-
-  const [qpayData, setQpayData] = useState<QPayFormData>({
-    phone: '',
-    amountMnt: '',
-  });
   const [donating, setDonating] = useState(false);
-  // --------------------------------------------------------
-  // QPay төлбөр (жишээ)
-  // --------------------------------------------------------
-  async function handleQPayDonate() {
-    try {
-      setDonating(true);
-      const res = await fetch('/api/payment/qpay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itemId,
-          phone: qpayData.phone,
-          amountMnt: qpayData.amountMnt,
-        }),
-      });
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'QPay төлбөр алдаа');
-      }
-      const data = await res.json();
-      alert(`QPay invoice үүслээ. QR code: ${data.qrImageUrl}`);
-    } catch (err: any) {
-      alert('QPay payment error: ' + err.message);
-    } finally {
-      setDonating(false);
-    }
-  }
 
   // --------------------------------------------------------
   // Тухайн табын контент
@@ -92,47 +55,6 @@ export default function PaymentTabs({
               amountMnt={approximateMNT}
               onSuccess={() => alert('Картаар амжилттай төллөө!')}
             />
-          </div>
-        );
-      case 'qpay':
-        return (
-          <div className='p-4 bg-white border border-gray-200 rounded space-y-4'>
-            <p className='text-sm text-gray-600'>
-              QPay ашиглан шууд дэмжих боломжтой.
-            </p>
-            <label className='block text-sm text-gray-600'>
-              Утасны дугаар:
-            </label>
-            <input
-              type='text'
-              className='border border-gray-300 rounded px-3 py-2 w-full'
-              placeholder='99998888'
-              value={qpayData.phone}
-              onChange={(e) =>
-                setQpayData({ ...qpayData, phone: e.target.value })
-              }
-              disabled={donating}
-            />
-            <label className='block text-sm text-gray-600'>
-              Хандивын дүн (MNT)
-            </label>
-            <input
-              type='number'
-              className='border border-gray-300 rounded px-3 py-2 w-full'
-              placeholder='10000'
-              value={qpayData.amountMnt}
-              onChange={(e) =>
-                setQpayData({ ...qpayData, amountMnt: e.target.value })
-              }
-              disabled={donating}
-            />
-            <Button
-              onClick={handleQPayDonate}
-              disabled={donating}
-              className='bg-blue-600 text-white w-full'
-            >
-              {donating ? 'Илгээж байна...' : 'QPay‐р төлөх'}
-            </Button>
           </div>
         );
       case 'eth':
@@ -165,11 +87,6 @@ export default function PaymentTabs({
           isActive={activeMethod === 'card'}
           onClick={() => setActiveMethod('card')}
         />
-        <TabButton
-          label='QPay'
-          isActive={activeMethod === 'qpay'}
-          onClick={() => setActiveMethod('qpay')}
-        />
       </div>
 
       {renderTabContent()}
@@ -189,6 +106,7 @@ function EthBuyTabContent({
   price: string; // wei
 }) {
   const router = useRouter();
+  const { data: session } = useSession();
 
   const [loading, setLoading] = useState(false);
   const [comment, setComment] = useState(''); // хэрэглэгчээс авах comment

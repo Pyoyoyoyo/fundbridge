@@ -2,14 +2,28 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { BadgeCheck, ShieldX } from 'lucide-react';
+import { ethers, BrowserProvider } from 'ethers';
+import { getAuditLogContract } from '@/services/auditLogConfig';
+import AuditLogWidget from '@/components/ui/widgets/AuditLogWidget';
+
+type AuditLog = {
+  user: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  ipAddress: string;
+  timestamp: bigint;
+};
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(true);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -43,8 +57,6 @@ export default function ProfilePage() {
         <div>
           <h1 className='text-2xl font-bold text-gray-800'>{user.name}</h1>
           <p className='text-gray-600'>{user.email}</p>
-
-          {/* ✅ KYC статус */}
           <div className='mt-2'>
             {user.kycVerified ? (
               <div className='flex items-center gap-1 text-green-600 font-semibold'>
@@ -73,7 +85,6 @@ export default function ProfilePage() {
         >
           Profile засах
         </Button>
-
         {!user.kycVerified && (
           <Button
             className='bg-yellow-500 hover:bg-yellow-400 text-white'
@@ -82,6 +93,11 @@ export default function ProfilePage() {
             KYC баталгаажуулах
           </Button>
         )}
+      </div>
+
+      <div className='mt-8'>
+        <h2 className='text-xl font-semibold mb-4'>Audit Logs</h2>
+        <AuditLogWidget />
       </div>
     </div>
   );

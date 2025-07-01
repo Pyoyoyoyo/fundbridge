@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Logo from './Logo';
+import NotificationBell from './NotificationBell';
+import { submitAuditLog } from '@/lib/useSubmitAuditLog';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -23,8 +25,29 @@ export default function Header() {
   ];
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
-
+  async function getClientIp(): Promise<string> {
+    try {
+      const res = await fetch('/api/ip');
+      const data = await res.json();
+      return data.ip || '';
+    } catch (e) {
+      return '';
+    }
+  }
   async function handleLogout() {
+    try {
+      const ip = await getClientIp();
+      await submitAuditLog({
+        action: 'LOGOUT',
+        entity_type: 'User',
+        entity_id: '1234',
+        ip_address: ip,
+      });
+      console.log('Audit log submitted');
+    } catch (err) {
+      console.error('Audit log failed:', err);
+    }
+
     await signOut({ callbackUrl: '/' });
   }
 
@@ -58,7 +81,8 @@ export default function Header() {
               </Link>
             );
           })}
-
+          {/* NotificationBell */}
+          <NotificationBell />
           {/* Нэвтрэлтийн төлөв */}
           {isLoading ? (
             <Skeleton className='h-5 w-16 rounded bg-gray-300' />

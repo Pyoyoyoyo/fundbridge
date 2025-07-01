@@ -10,6 +10,7 @@ import { signIn } from 'next-auth/react';
 import googleLogo from '@img/login/google-logo.png';
 import walletLogo from '@img/login/wallet-logo.png';
 import Image from 'next/image';
+import { submitAuditLog } from '@/lib/useSubmitAuditLog';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function LoginPage() {
     const result = await signIn('credentials', {
       email,
       password,
-      redirect: false, // бид гараар redirect хийх тул false
+      redirect: false,
     });
 
     setLoading(false);
@@ -34,8 +35,28 @@ export default function LoginPage() {
     if (result?.error) {
       setError(result.error);
     } else {
-      // Амжилттай нэвтэрсэн
+      const ip = await getClientIp();
+      try {
+        await submitAuditLog({
+          action: 'LOGIN',
+          entity_type: 'User',
+          entity_id: '1234',
+          ip_address: ip,
+        });
+        console.log('Audit log submitted');
+      } catch (err) {
+        console.error('Audit log failed:', err);
+      }
       router.push('/');
+    }
+  }
+  async function getClientIp(): Promise<string> {
+    try {
+      const res = await fetch('/api/ip');
+      const data = await res.json();
+      return data.ip || '';
+    } catch (e) {
+      return '';
     }
   }
 
