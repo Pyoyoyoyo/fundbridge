@@ -10,28 +10,28 @@ export default function NotificationBell() {
   const bellRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications
-  async function fetchNotifications() {
-    try {
-      const res = await fetch('/api/notifications');
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch notifications', err);
-    }
-  }
+  // async function fetchNotifications() {
+  //   try {
+  //     const res = await fetch('/api/notifications');
+  //     if (res.ok) {
+  //       const data = await res.json();
+  //       setNotifications(data);
+  //     }
+  //   } catch (err) {
+  //     console.error('Failed to fetch notifications', err);
+  //   }
+  // }
 
-  useEffect(() => {
-    fetchNotifications(); // first load
+  // useEffect(() => {
+  //   fetchNotifications(); // first load
 
-    const interval = setInterval(fetchNotifications, 5000); // refresh every 5 sec
+  //   const interval = setInterval(fetchNotifications, 5000); // refresh every 5 sec
 
-    // cleanup when component unmount
-    return () => clearInterval(interval);
-  }, []);
+  //   // cleanup when component unmount
+  //   return () => clearInterval(interval);
+  // }, []);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  // const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   function toggleOpen() {
     setOpen((prev) => !prev);
@@ -58,15 +58,9 @@ export default function NotificationBell() {
         className='relative flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition'
       >
         <Bell
-          className={`h-5 w-5 text-gray-800 ${
-            unreadCount > 0 ? 'animate-wiggle' : ''
-          }`}
+          className={`h-5 w-5 text-gray-800
+          `}
         />
-        {unreadCount > 0 && (
-          <span className='absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 bg-red-600 text-white text-[10px] font-bold rounded-full border-2 border-white shadow-md'>
-            {unreadCount}
-          </span>
-        )}
       </button>
 
       {open && (
